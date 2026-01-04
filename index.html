@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>BioDiary Master Pro</title>
+    <title>BioDiary Ultimate Pro</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         :root { --primary: #27ae60; --accent: #8e44ad; --premium: #f1c40f; --bg: #f4f7f6; --white: #ffffff; }
@@ -22,14 +22,15 @@
         .btn { background: var(--primary); color: white; border: none; padding: 15px; border-radius: 12px; width: 100%; font-weight: bold; cursor: pointer; }
         input, select { width: 100%; padding: 12px; margin: 8px 0; border: 1px solid #eee; border-radius: 10px; font-size: 16px; box-sizing: border-box; }
         
-        /* Modal & Suggestions */
+        /* Modal & Lists */
         .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 2000; align-items: center; justify-content: center; }
-        .modal-content { background: white; width: 90%; border-radius: 20px; padding: 20px; }
+        .modal-content { background: white; width: 90%; border-radius: 20px; padding: 20px; max-height: 80vh; overflow-y: auto; }
         .suggestions { background: white; border: 1px solid #eee; border-radius: 10px; max-height: 150px; overflow-y: auto; display: none; margin-bottom: 10px; }
         .sugg-item { padding: 10px; border-bottom: 1px solid #f9f9f9; font-size: 14px; }
+        .ingredient-tag { display: inline-block; background: #e8f5e9; color: #2e7d32; padding: 6px 12px; border-radius: 20px; font-size: 12px; margin: 4px; cursor: pointer; }
 
-        /* Tags */
-        .ingredient-tag { display: inline-block; background: #e8f5e9; color: #2e7d32; padding: 6px 12px; border-radius: 20px; font-size: 13px; margin: 4px; cursor: pointer; }
+        /* Coach Box */
+        .coach-box { background: linear-gradient(135deg, #f3e5f5, #e3f2fd); border-radius: 15px; padding: 15px; border-left: 5px solid var(--accent); margin: 15px 0; font-size: 14px; }
 
         .bottom-nav { position: fixed; bottom: 0; width: 100%; height: 75px; background: white; display: flex; justify-content: space-around; align-items: center; border-top: 1px solid #eee; z-index: 1000; }
         .nav-item { border: none; background: none; color: #888; font-size: 11px; display: flex; flex-direction: column; align-items: center; }
@@ -41,7 +42,8 @@
     <div id="addModal" class="modal">
         <div class="modal-content">
             <h3>Nuovo Pasto</h3>
-            <input type="text" id="nameIn" placeholder="Cerca cibo..." oninput="searchFood()">
+            <div id="recentCibi" style="margin-bottom:10px;"></div>
+            <input type="text" id="nameIn" placeholder="Cerca o scrivi..." oninput="searchFood()">
             <div id="suggBox" class="suggestions"></div>
             <input type="number" id="calIn" placeholder="Calorie (kcal)">
             <select id="catIn">
@@ -51,7 +53,7 @@
                 <option value="Snack">Snack</option>
             </select>
             <button class="btn" onclick="salvaPasto()">Aggiungi</button>
-            <button onclick="toggleModal()" style="background:none; border:none; color:red; width:100%; margin-top:10px;">Chiudi</button>
+            <button onclick="toggleModal()" style="background:none; border:none; color:red; width:100%; margin-top:10px;">Esci</button>
         </div>
     </div>
 
@@ -67,24 +69,27 @@
         <div class="card">
             <input type="date" id="dateSelector" onchange="renderApp()">
             <div style="display:flex; justify-content:space-around; text-align:center; margin:10px 0;">
-                <div><small id="labelAvg">Oggi</small><br><b id="valMedia" style="color:var(--primary); font-size:20px;">0</b></div>
+                <div><small id="labelType">Oggi</small><br><b id="valMedia" style="color:var(--primary); font-size:20px;">0</b></div>
                 <div><small>Target</small><br><b id="valTarget" style="font-size:20px;">2000</b></div>
             </div>
-            <div style="height: 200px;"><canvas id="chartMain"></canvas></div>
+            <div style="height: 180px;"><canvas id="chartMain"></canvas></div>
         </div>
+        <div id="coachBox" class="coach-box">🤖 <b>Diet Coach:</b> <span id="coachText">...</span></div>
         <div id="foodList"></div>
     </div>
 
     <div id="page-premium" class="page">
-        <h2>Smart Recipes ⭐</h2>
+        <h2>Smart Kitchen ⭐</h2>
         <div class="card">
-            <h3>🛒 Dispensa</h3>
-            <input type="text" id="ingIn" placeholder="Aggiungi ingrediente...">
-            <button class="btn" style="background:var(--accent)" onclick="addIngredient()">Aggiungi</button>
-            <div id="dispensaList" style="margin-top:15px;"></div>
+            <h3>Dispensa</h3>
+            <input type="text" id="ingIn" placeholder="Cosa hai in casa?">
+            <button class="btn" onclick="addIngredient()">Aggiungi</button>
+            <div id="dispensaList" style="margin-top:10px;"></div>
         </div>
-        <button class="btn" style="background:var(--premium); color:black;" onclick="suggestRecipes()">✨ Genera Ricette AI</button>
-        <div id="recipesResults" style="margin-top:15px;"></div>
+        <button class="btn" style="background:var(--premium); color:black;" onclick="suggestRecipes()">Trova Ricette AI</button>
+        <div id="recipesResults"></div>
+        <h3 style="margin-top:20px;">I miei piatti</h3>
+        <div id="ricettarioList"></div>
     </div>
 
     <div id="page-scan" class="page">
@@ -92,7 +97,7 @@
         <div class="card" style="text-align:center; background:#000; height:350px; border-radius:20px; overflow:hidden;">
             <video id="video" style="width:100%; height:100%; object-fit:cover;" autoplay playsinline></video>
         </div>
-        <button class="btn" style="background:var(--accent)" onclick="simulateScan()">Scansiona Piatto</button>
+        <button class="btn" style="background:var(--accent)" onclick="simulateScan()">Scansiona</button>
     </div>
 
     <div id="page-profile" class="page">
@@ -109,96 +114,60 @@
 
     <nav class="bottom-nav">
         <button class="nav-item active" onclick="switchPage('diario', this)">📊<br>Report</button>
-        <button class="nav-item" onclick="switchPage('premium', this)">⭐<br>Ricette</button>
-        <button class="nav-item" onclick="switchPage('scan', this)">📸<br>Scanner</button>
+        <button class="nav-item" onclick="switchPage('premium', this)">⭐<br>Cucina</button>
+        <button class="nav-item" onclick="switchPage('scan', this)">📸<br>Scan</button>
         <button class="nav-item" onclick="switchPage('profile', this)">👤<br>Profilo</button>
     </nav>
 
 <script>
-    let db = JSON.parse(localStorage.getItem('bioElite_V6_db')) || [];
-    let prof = JSON.parse(localStorage.getItem('bioElite_V6_prof')) || { target: 2000 };
-    let weights = JSON.parse(localStorage.getItem('bioElite_V6_w')) || [];
-    let dispensa = JSON.parse(localStorage.getItem('bioElite_V6_ing')) || [];
+    let db = JSON.parse(localStorage.getItem('bio_v7_db')) || [];
+    let prof = JSON.parse(localStorage.getItem('bio_v7_prof')) || { target: 2000 };
+    let weights = JSON.parse(localStorage.getItem('bio_v7_w')) || [];
+    let dispensa = JSON.parse(localStorage.getItem('bio_v7_ing')) || [];
+    let ricettario = JSON.parse(localStorage.getItem('bio_v7_ric')) || [];
     let chartM = null, chartW = null, videoStream = null, currentMode = 'day';
 
-    // --- NAVIGATION ---
-    async function switchPage(id, btn) {
+    function switchPage(id, btn) {
         document.querySelectorAll('.page').forEach(p => p.classList.remove('active-page'));
         document.getElementById('page-'+id).classList.add('active-page');
         document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
         btn.classList.add('active');
         document.getElementById('fabBtn').style.display = (id === 'diario') ? 'flex' : 'none';
         
+        // Pulizia campi
+        if(id === 'premium') renderRicettario();
         if(id === 'scan') startCamera(); else stopCamera();
         renderApp();
     }
 
-    function setMode(m, b) {
-        currentMode = m;
-        document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
-        b.classList.add('active');
-        renderApp();
+    function toggleModal() {
+        const m = document.getElementById('addModal');
+        const isOpen = m.style.display === 'flex';
+        if(!isOpen) {
+            document.getElementById('nameIn').value = "";
+            document.getElementById('calIn').value = "";
+            renderRecent();
+        }
+        m.style.display = isOpen ? 'none' : 'flex';
     }
 
-    // --- CAMERA ---
-    async function startCamera() {
-        const video = document.getElementById('video');
-        try {
-            videoStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } });
-            video.srcObject = videoStream;
-        } catch (e) { alert("Attiva i permessi fotocamera"); }
-    }
-    function stopCamera() { if(videoStream) videoStream.getTracks().forEach(t => t.stop()); }
-
-    // --- DIARIO ---
-    function toggleModal() { const m = document.getElementById('addModal'); m.style.display = (m.style.display === 'flex') ? 'none' : 'flex'; }
-    
-    async function searchFood() {
-        const q = document.getElementById('nameIn').value;
-        const box = document.getElementById('suggBox');
-        if(q.length < 3) return;
-        const res = await fetch(`https://it.openfoodfacts.org/cgi/search.pl?search_terms=${q}&json=1&page_size=5`);
-        const data = await res.json();
-        box.innerHTML = "";
-        data.products.forEach(p => {
-            const kcal = p.nutriments['energy-kcal_100g'] || 0;
-            const d = document.createElement('div');
-            d.className = 'sugg-item';
-            d.innerHTML = `<b>${p.product_name}</b><br><small>${kcal} kcal/100g</small>`;
-            d.onclick = () => { document.getElementById('nameIn').value = p.product_name; document.getElementById('calIn').value = Math.round(kcal); box.style.display = 'none'; };
-            box.appendChild(d);
-        });
-        box.style.display = 'block';
-    }
-
-    function salvaPasto() {
-        db.push({ id: Date.now(), nome: document.getElementById('nameIn').value, cal: parseInt(document.getElementById('calIn').value), cat: document.getElementById('catIn').value, data: document.getElementById('dateSelector').value });
-        localStorage.setItem('bioElite_V6_db', JSON.stringify(db));
-        toggleModal(); renderApp();
-    }
-
-    // --- RICETTE ---
-    function addIngredient() {
-        const val = document.getElementById('ingIn').value;
-        if(val) { dispensa.push(val); localStorage.setItem('bioElite_V6_ing', JSON.stringify(dispensa)); document.getElementById('ingIn').value=""; renderDispensa(); }
-    }
-    function renderDispensa() {
-        document.getElementById('dispensaList').innerHTML = dispensa.map((ing, i) => `<span class="ingredient-tag" onclick="removeIng(${i})">${ing}</span>`).join('');
-    }
-    function removeIng(i) { dispensa.splice(i, 1); localStorage.setItem('bioElite_V6_ing', JSON.stringify(dispensa)); renderDispensa(); }
-
-    function suggestRecipes() {
-        const res = document.getElementById('recipesResults');
-        const mocks = [{n:"Pasta Pomodoro", i:["pasta"]}, {n:"Omelette", i:["uova"]}, {n:"Pollo e Zucchine", i:["pollo", "zucchine"]}];
-        const lowDisp = dispensa.map(d => d.toLowerCase());
-        const found = mocks.filter(m => m.i.some(i => lowDisp.includes(i)));
-        res.innerHTML = found.length ? "" : "Nessun match. Prova ad aggiungere 'Pasta'.";
-        found.forEach(r => {
-            res.innerHTML += `<div class="card" style="display:flex; justify-content:space-between;"><b>${r.n}</b> <button onclick="alert('Aggiunto!')">+</button></div>`;
+    // --- SUGGERIMENTI RECENTI ---
+    function renderRecent() {
+        const box = document.getElementById('recentCibi');
+        const counts = {};
+        db.forEach(p => counts[p.nome] = (counts[p.nome] || 0) + 1);
+        const sorted = Object.keys(counts).sort((a,b) => counts[b] - counts[a]).slice(0, 3);
+        box.innerHTML = sorted.length ? "<small>Frequenti:</small><br>" : "";
+        sorted.forEach(c => {
+            const span = document.createElement('span');
+            span.className = 'ingredient-tag';
+            span.innerText = c;
+            span.onclick = () => { document.getElementById('nameIn').value = c; searchFood(); };
+            box.appendChild(span);
         });
     }
 
-    // --- RENDER ---
+    // --- DIARIO & COACH ---
     function renderApp() {
         const target = prof.target || 2000;
         document.getElementById('valTarget').innerText = target;
@@ -211,8 +180,14 @@
             let tot = 0, s = {Colazione:0, Pranzo:0, Cena:0, Snack:0};
             document.getElementById('foodList').innerHTML = oggi.map(p => { tot+=p.cal; s[p.cat]+=p.cal; return `<div class="card">${p.nome} - ${p.cal} kcal</div>` }).join('');
             document.getElementById('valMedia').innerText = tot;
-            document.getElementById('labelAvg').innerText = "Oggi";
+            document.getElementById('labelType').innerText = "Oggi";
             chartM = new Chart(ctx, { type: 'doughnut', data: { labels: Object.keys(s), datasets: [{ data: Object.values(s), backgroundColor: ['#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0'] }] }});
+            
+            // COACH DINAMICO
+            const coach = document.getElementById('coachText');
+            if(tot === 0) coach.innerText = "Registra i pasti per analizzare la tua giornata.";
+            else if(tot > target) coach.innerText = "Hai superato il limite. Opta per una cena proteica e leggera.";
+            else coach.innerText = "Ottimo bilanciamento. Il tuo metabolismo è in fase ideale.";
         } else {
             let labels = [], vals = [];
             let days = currentMode === 'week' ? 7 : 30;
@@ -222,32 +197,109 @@
                 labels.push(dStr.split('-')[2]);
                 vals.push(db.filter(p => p.data === dStr).reduce((a,b)=>a+b.cal,0));
             }
-            document.getElementById('valMedia').innerText = Math.round(vals.reduce((a,b)=>a+b,0)/days);
-            document.getElementById('labelAvg').innerText = "Media";
+            const avg = Math.round(vals.reduce((a,b)=>a+b,0)/days);
+            document.getElementById('valMedia').innerText = avg;
+            document.getElementById('labelType').innerText = "Media";
             chartM = new Chart(ctx, { type: 'line', data: { labels: labels, datasets: [{ data: vals, borderColor: '#27ae60', tension:0.3 }] }});
+            document.getElementById('coachText').innerText = avg > target ? "Trend in eccesso. Riduci i condimenti questa settimana." : "Costanza perfetta. Mantieni questo ritmo!";
         }
         renderWeight();
     }
 
+    // --- RICETTE & RICETTARIO ---
+    function addIngredient() {
+        const val = document.getElementById('ingIn').value;
+        if(val) { dispensa.push(val); localStorage.setItem('bio_v7_ing', JSON.stringify(dispensa)); document.getElementById('ingIn').value=""; renderDispensa(); }
+    }
+    function renderDispensa() {
+        document.getElementById('dispensaList').innerHTML = dispensa.map((ing, i) => `<span class="ingredient-tag" onclick="removeIng(${i})">${ing}</span>`).join('');
+    }
+    function removeIng(i) { dispensa.splice(i, 1); localStorage.setItem('bio_v7_ing', JSON.stringify(dispensa)); renderDispensa(); }
+
+    async function suggestRecipes() {
+        const res = document.getElementById('recipesResults');
+        res.innerHTML = "⌛ Ricerca database internazionale...";
+        const ingStr = dispensa.join(',');
+        try {
+            // Simulazione chiamata database reale (Open Food Facts API per ingredienti simili)
+            const r = await fetch(`https://it.openfoodfacts.org/cgi/search.pl?search_terms=${dispensa[0]}&json=1&page_size=3`);
+            const data = await r.json();
+            res.innerHTML = "";
+            data.products.forEach(p => {
+                const cal = p.nutriments['energy-kcal_100g'] || 250;
+                res.innerHTML += `<div class="card" style="display:flex; justify-content:space-between; align-items:center;">
+                    <span><b>${p.product_name}</b><br><small>${cal} kcal</small></span>
+                    <button class="btn" style="width:auto; padding:8px 15px;" onclick="saveToBook('${p.product_name}', ${cal})">Salva</button>
+                </div>`;
+            });
+        } catch(e) { res.innerHTML = "Errore connessione database."; }
+    }
+
+    function saveToBook(n, c) {
+        ricettario.push({n, c});
+        localStorage.setItem('bio_v7_ric', JSON.stringify(ricettario));
+        renderRicettario();
+        alert("Salvato nel Ricettario!");
+    }
+
+    function renderRicettario() {
+        document.getElementById('ricettarioList').innerHTML = ricettario.map(r => `
+            <div class="card" style="border-left:5px solid var(--premium)"><b>${r.n}</b> - ${r.c} kcal</div>
+        `).join('');
+    }
+
+    // --- FUNZIONI BASE ---
+    async function startCamera() {
+        try { videoStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } });
+        document.getElementById('video').srcObject = videoStream; } catch(e) {}
+    }
+    function stopCamera() { if(videoStream) videoStream.getTracks().forEach(t => t.stop()); }
+    
+    async function searchFood() {
+        const q = document.getElementById('nameIn').value;
+        if(q.length < 3) return;
+        const res = await fetch(`https://it.openfoodfacts.org/cgi/search.pl?search_terms=${q}&json=1&page_size=5`);
+        const data = await res.json();
+        const box = document.getElementById('suggBox');
+        box.innerHTML = "";
+        data.products.forEach(p => {
+            const kcal = p.nutriments['energy-kcal_100g'] || 0;
+            const d = document.createElement('div'); d.className = 'sugg-item';
+            d.innerHTML = `<b>${p.product_name}</b> (${kcal} kcal)`;
+            d.onclick = () => { document.getElementById('nameIn').value = p.product_name; document.getElementById('calIn').value = Math.round(kcal); box.style.display = 'none'; };
+            box.appendChild(d);
+        });
+        box.style.display = 'block';
+    }
+
+    function salvaPasto() {
+        const d = document.getElementById('dateSelector').value;
+        db.push({ id: Date.now(), nome: document.getElementById('nameIn').value, cal: parseInt(document.getElementById('calIn').value), cat: document.getElementById('catIn').value, data: d });
+        localStorage.setItem('bio_v7_db', JSON.stringify(db));
+        toggleModal(); renderApp();
+    }
+
+    function setMode(m, b) { currentMode = m; document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active')); b.classList.add('active'); renderApp(); }
+
     function renderWeight() {
         const ctx = document.getElementById('chartWeight').getContext('2d');
         if(chartW) chartW.destroy();
-        chartW = new Chart(ctx, { type: 'line', data: { labels: weights.map(w=>w.d), datasets: [{ data: weights.map(w=>w.v), borderColor: '#8e44ad' }] }});
+        chartW = new Chart(ctx, { type: 'line', data: { labels: weights.map(w=>w.d), datasets: [{ data: weights.map(w=>w.v), borderColor: '#8e44ad', tension:0.3 }] }, options: {maintainAspectRatio:false}});
     }
 
     function saveProfile() {
         const w = parseFloat(document.getElementById('p-weight').value);
         if(w) { 
             prof.target = Math.round(((10*w)+(6.25*180)-(5*30)+5)*1.4);
-            localStorage.setItem('bioElite_V6_prof', JSON.stringify(prof));
+            localStorage.setItem('bio_v7_prof', JSON.stringify(prof));
             weights.push({d: new Date().toLocaleDateString('it-IT', {day:'2-digit', month:'2-digit'}), v: w});
-            localStorage.setItem('bioElite_V6_w', JSON.stringify(weights));
-            renderApp();
+            localStorage.setItem('bio_v7_w', JSON.stringify(weights));
+            renderApp(); alert("Profilo aggiornato!");
         }
     }
 
     document.getElementById('dateSelector').valueAsDate = new Date();
-    renderApp(); renderDispensa();
+    renderApp(); renderDispensa(); renderRicettario();
 </script>
 </body>
 </html>
