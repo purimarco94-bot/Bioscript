@@ -174,34 +174,5 @@
 </script>
 </body>
 </html>
-// --- FUNZIONE ESPORTA PDF (TESTUALE) ---
-function generatePDF() {
-    let report = "BIODIARY ULTIMATE REPORT\n";
-    report += "Generato il: " + new Date().toLocaleString() + "\n";
-    report += "------------------------------------------\n\n";
-    
-    db.forEach(p => {
-        report += `[${p.data}] ${p.cat}: ${p.nome} - ${p.cal} kcal\n`;
-    });
-    
-    const blob = new Blob([report], { type: 'text/plain' });
-    const link = document.createElement('a');
-    link.href = URL.createObjectURL(blob);
-    link.download = "BioDiary_Report.txt";
-    link.click();
-}
 
-// --- BACKUP CLOUD (JSON) ---
-function exportData() {
-    const backup = {
-        pasti: db,
-        profilo: prof,
-        pesi: weights,
-        idratazione: waterData
-    };
-    const blob = new Blob([JSON.stringify(backup)], { type: 'application/json' });
-    const link = document.createElement('a');
-    link.href = URL.createObjectURL(blob);
-    link.download = "BioDiary_Backup.json";
-    link.click();
-}
+
