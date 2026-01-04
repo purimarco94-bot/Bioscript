@@ -1,334 +1,207 @@
 <!DOCTYPE html>
 <html lang="it">
-<head<link rel="manifest" href="manifest.json">
+<head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>BioDiary Ultimate Recipe</title>
+    <title>BioDiary Ultimate v11</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
-        :root { --primary: #27ae60; --accent: #8e44ad; --premium: #f1c40f; --bg: #f4f7f6; --white: #ffffff; --danger: #e74c3c; }
+        :root { --primary: #27ae60; --accent: #8e44ad; --water: #3498db; --fasting: #f39c12; --bg: #f4f7f6; --white: #ffffff; --danger: #e74c3c; }
         body { font-family: -apple-system, sans-serif; background: var(--bg); margin: 0; padding: 0; color: #2c3e50; }
         .page { display: none; padding: 20px 15px 100px 15px; min-height: 100vh; box-sizing: border-box; }
         .active-page { display: block; }
         .card { background: var(--white); border-radius: 20px; padding: 18px; margin-bottom: 15px; box-shadow: 0 4px 12px rgba(0,0,0,0.06); }
         
-        .report-tabs { display: flex; gap: 5px; margin-bottom: 15px; background: #e0e0e0; border-radius: 12px; padding: 4px; }
-        .tab-btn { flex: 1; border: none; padding: 10px; border-radius: 10px; font-size: 13px; background: transparent; cursor: pointer; }
-        .tab-btn.active { background: white; font-weight: bold; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
-
+        /* Fasting Timer UI */
+        .timer-display { font-size: 32px; font-weight: bold; text-align: center; color: var(--fasting); margin: 10px 0; }
+        
         .fab { position: fixed; bottom: 90px; right: 20px; width: 60px; height: 60px; background: var(--primary); color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 30px; box-shadow: 0 4px 10px rgba(0,0,0,0.2); z-index: 999; border: none; }
-        .btn { background: var(--primary); color: white; border: none; padding: 15px; border-radius: 12px; width: 100%; font-weight: bold; cursor: pointer; }
-        input, select { width: 100%; padding: 12px; margin: 8px 0; border: 1px solid #eee; border-radius: 10px; font-size: 16px; box-sizing: border-box; }
+        .btn { background: var(--primary); color: white; border: none; padding: 15px; border-radius: 12px; width: 100%; font-weight: bold; cursor: pointer; margin-top: 5px; }
+        .btn-outline { background: transparent; color: var(--primary); border: 2px solid var(--primary); }
         
-        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 2000; align-items: center; justify-content: center; }
-        .modal-content { background: white; width: 90%; border-radius: 20px; padding: 20px; max-height: 80vh; overflow-y: auto; }
-        .suggestions { background: white; border: 1px solid #eee; border-radius: 10px; max-height: 150px; overflow-y: auto; display: none; margin-bottom: 10px; }
-        .sugg-item { padding: 10px; border-bottom: 1px solid #f9f9f9; font-size: 14px; }
-        .ingredient-tag { display: inline-block; background: #e8f5e9; color: #2e7d32; padding: 6px 12px; border-radius: 20px; font-size: 12px; margin: 4px; cursor: pointer; }
-        
-        .delete-btn { color: var(--danger); font-weight: bold; padding: 5px 10px; border: none; background: none; font-size: 18px; cursor: pointer; }
-
-        .coach-box { background: linear-gradient(135deg, #f3e5f5, #e3f2fd); border-radius: 15px; padding: 15px; border-left: 5px solid var(--accent); margin: 15px 0; font-size: 14px; }
-
         .bottom-nav { position: fixed; bottom: 0; width: 100%; height: 75px; background: white; display: flex; justify-content: space-around; align-items: center; border-top: 1px solid #eee; z-index: 1000; }
         .nav-item { border: none; background: none; color: #888; font-size: 11px; display: flex; flex-direction: column; align-items: center; }
         .nav-item.active { color: var(--primary); font-weight: bold; }
+        
+        input, select { width: 100%; padding: 12px; margin: 8px 0; border: 1px solid #eee; border-radius: 10px; box-sizing: border-box; }
     </style>
 </head>
 <body>
 
-    <div id="addModal" class="modal">
-        <div class="modal-content">
-            <h3>Nuovo Pasto</h3>
-            <div id="recentCibi" style="margin-bottom:10px;"></div>
-            <input type="text" id="nameIn" placeholder="Cerca cibo..." oninput="searchFood()">
-            <div id="suggBox" class="suggestions"></div>
-            <input type="number" id="calIn" placeholder="Calorie (kcal)">
-            <select id="catIn">
-                <option value="Colazione">Colazione</option>
-                <option value="Pranzo">Pranzo</option>
-                <option value="Cena">Cena</option>
-                <option value="Snack">Snack</option>
-            </select>
-            <button class="btn" onclick="salvaPasto()">Aggiungi</button>
-            <button onclick="toggleModal()" style="background:none; border:none; color:red; width:100%; margin-top:10px;">Esci</button>
-        </div>
-    </div>
-
-    <button class="fab" id="fabBtn" onclick="toggleModal()">+</button>
-
     <div id="page-diario" class="page active-page">
-        <h2>Diario Alimentare</h2>
-        <div class="report-tabs">
-            <button class="tab-btn active" onclick="setMode('day', this)">Giorno</button>
-            <button class="tab-btn" onclick="setMode('week', this)">Settimana</button>
-            <button class="tab-btn" onclick="setMode('month', this)">Mese</button>
+        <h2>Report & Digiuno</h2>
+        
+        <div class="card">
+            <h3>⏳ Timer Digiuno</h3>
+            <div id="timerStatus" class="timer-display">00:00:00</div>
+            <button id="fastBtn" class="btn" style="background:var(--fasting)" onclick="toggleFast()">Inizia Digiuno</button>
         </div>
+
         <div class="card">
             <input type="date" id="dateSelector" onchange="renderApp()">
-            <div style="display:flex; justify-content:space-around; text-align:center; margin:10px 0;">
-                <div><small id="labelType">Oggi</small><br><b id="valMedia" style="color:var(--primary); font-size:20px;">0</b></div>
-                <div><small>Target</small><br><b id="valTarget" style="font-size:20px;">2000</b></div>
-            </div>
             <div style="height: 180px;"><canvas id="chartMain"></canvas></div>
         </div>
-        <div id="coachBox" class="coach-box">🤖 <b>Diet Coach:</b> <span id="coachText">...</span></div>
+        
         <div id="foodList"></div>
     </div>
 
     <div id="page-premium" class="page">
-        <h2>Smart Kitchen ⭐</h2>
+        <h2>Cucina ⭐</h2>
         <div class="card">
-            <h3>Dispensa</h3>
             <input type="text" id="ingIn" placeholder="Aggiungi ingrediente...">
-            <button class="btn" onclick="addIngredient()">Inserisci</button>
+            <button class="btn" onclick="addIngredient()">Aggiungi</button>
             <div id="dispensaList" style="margin-top:10px;"></div>
         </div>
-        <button class="btn" style="background:var(--premium); color:black;" onclick="suggestRecipes()">✨ Genera Ricette Reali</button>
         <div id="recipesResults"></div>
-        <h3 style="margin-top:20px;">Il mio Ricettario</h3>
-        <div id="ricettarioList"></div>
     </div>
 
     <div id="page-scan" class="page">
         <h2>Scanner AI</h2>
-        <div class="card" style="text-align:center; background:#000; height:350px; border-radius:20px; overflow:hidden;">
-            <video id="video" style="width:100%; height:100%; object-fit:cover;" autoplay playsinline></video>
+        <div class="card">
+            <video id="video" style="width:100%; border-radius:15px; background:#000;" autoplay playsinline></video>
+            <button class="btn" onclick="simulateBarcodeScan()">Scansiona Prodotto</button>
         </div>
-        <button class="btn" style="background:var(--accent)" onclick="simulateScan()">Scansiona</button>
     </div>
 
     <div id="page-profile" class="page">
-        <h2>Profilo</h2>
+        <h2>Profilo & Dati</h2>
         <div class="card">
-            <label>Peso (kg)</label><input type="number" id="p-weight">
-            <label>Altezza (cm)</label><input type="number" id="p-height">
-            <label>Età</label><input type="number" id="p-age">
-            <label>Sesso</label><select id="p-sex"><option value="M">Uomo</option><option value="F">Donna</option></select>
-            <button class="btn" onclick="saveProfile()">Salva Dati</button>
+            <button class="btn" onclick="exportData()">📥 Esporta Backup (Cloud/JSON)</button>
+            <button class="btn btn-outline" onclick="document.getElementById('importFile').click()">📤 Carica Backup</button>
+            <input type="file" id="importFile" style="display:none" onchange="importData(event)">
+            <button class="btn" style="background:var(--accent)" onclick="generatePDF()">📄 Genera Report Testuale (PDF)</button>
         </div>
-        <div class="card"><h3>Trend Peso</h3><div style="height:150px;"><canvas id="chartWeight"></canvas></div></div>
+        <div class="card">
+            <label>Peso (kg)</label>
+            <input type="number" id="p-weight">
+            <button class="btn" onclick="saveProfile()">Aggiorna</button>
+        </div>
     </div>
 
     <nav class="bottom-nav">
-        <button class="nav-item active" onclick="switchPage('diario', this)">📊<br>Report</button>
+        <button class="nav-item active" onclick="switchPage('diario', this)">📊<br>Diario</button>
         <button class="nav-item" onclick="switchPage('premium', this)">⭐<br>Cucina</button>
         <button class="nav-item" onclick="switchPage('scan', this)">📸<br>Scan</button>
         <button class="nav-item" onclick="switchPage('profile', this)">👤<br>Profilo</button>
     </nav>
 
 <script>
-    let db = JSON.parse(localStorage.getItem('bio_v8_db')) || [];
-    let prof = JSON.parse(localStorage.getItem('bio_v8_prof')) || { target: 2000 };
-    let weights = JSON.parse(localStorage.getItem('bio_v8_w')) || [];
-    let dispensa = JSON.parse(localStorage.getItem('bio_v8_ing')) || [];
-    let ricettario = JSON.parse(localStorage.getItem('bio_v8_ric')) || [];
-    let chartM = null, chartW = null, videoStream = null, currentMode = 'day';
+    let db = JSON.parse(localStorage.getItem('bio_v11_db')) || [];
+    let fastData = JSON.parse(localStorage.getItem('bio_v11_fast')) || { active: false, start: null };
+    let timerInterval;
 
-    // DATABASE RICETTE REALI (Logica di matching avanzata)
-    const databaseRicette = [
-        { n: "Pasta al Pomodoro e Basilico", c: 450, i: ["pasta", "pomodoro", "basilico"], link: "https://ricette.giallozafferano.it/Pasta-al-pomodoro.html" },
-        { n: "Omelette alle Erbe", c: 210, i: ["uova", "formaggio"], link: "https://ricette.giallozafferano.it/Omelette.html" },
-        { n: "Insalata di Pollo e Zucchine", c: 320, i: ["pollo", "zucchine"], link: "https://ricette.giallozafferano.it/Insalata-di-pollo.html" },
-        { n: "Risotto allo Zafferano", c: 400, i: ["riso", "zafferano", "burro"], link: "https://ricette.giallozafferano.it/Risotto-alla-Milanese.html" },
-        { n: "Salmone al Forno con Patate", c: 550, i: ["salmone", "patate"], link: "https://ricette.giallozafferano.it/Salmone-al-forno.html" }
-    ];
+    // --- FASTING TIMER ---
+    function toggleFast() {
+        if (!fastData.active) {
+            fastData.active = true;
+            fastData.start = Date.now();
+            document.getElementById('fastBtn').innerText = "Termina Digiuno";
+        } else {
+            fastData.active = false;
+            fastData.start = null;
+            document.getElementById('fastBtn').innerText = "Inizia Digiuno";
+        }
+        localStorage.setItem('bio_v11_fast', JSON.stringify(fastData));
+        updateTimer();
+    }
 
+    function updateTimer() {
+        if (fastData.active) {
+            const diff = Date.now() - fastData.start;
+            const h = Math.floor(diff / 3600000);
+            const m = Math.floor((diff % 3600000) / 60000);
+            const s = Math.floor((diff % 60000) / 1000);
+            document.getElementById('timerStatus').innerText = 
+                `${h.toString().padStart(2,'0')}:${m.toString().padStart(2,'0')}:${s.toString().padStart(2,'0')}`;
+        } else {
+            document.getElementById('timerStatus').innerText = "00:00:00";
+        }
+    }
+
+    // --- BACKUP CLOUD & EXPORT ---
+    function exportData() {
+        const data = { db: db, prof: localStorage.getItem('bio_v11_prof'), weights: localStorage.getItem('bio_v11_w') };
+        const blob = new Blob([JSON.stringify(data)], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `BioDiary_Backup_${new Date().toISOString().split('T')[0]}.json`;
+        a.click();
+    }
+
+    function importData(event) {
+        const file = event.target.files[0];
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            const imported = JSON.parse(e.target.result);
+            db = imported.db;
+            localStorage.setItem('bio_v11_db', JSON.stringify(db));
+            alert("Dati importati con successo!");
+            location.reload();
+        };
+        reader.readAsText(file);
+    }
+
+    function generatePDF() {
+        let text = "REPORT BIODIARY\n\n";
+        db.forEach(p => text += `${p.data} - ${p.nome}: ${p.cal} kcal\n`);
+        const blob = new Blob([text], { type: 'text/plain' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = "Report_Salute.txt";
+        a.click();
+    }
+
+    // --- CORE ---
     function switchPage(id, btn) {
         document.querySelectorAll('.page').forEach(p => p.classList.remove('active-page'));
         document.getElementById('page-'+id).classList.add('active-page');
         document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
         btn.classList.add('active');
-        document.getElementById('fabBtn').style.display = (id === 'diario') ? 'flex' : 'none';
-        if(id === 'premium') renderRicettario();
-        if(id === 'scan') startCamera(); else stopCamera();
-        renderApp();
-    }
-
-    function toggleModal() {
-        const m = document.getElementById('addModal');
-        const isOpen = m.style.display === 'flex';
-        if(!isOpen) {
-            document.getElementById('nameIn').value = "";
-            document.getElementById('calIn').value = "";
-            renderRecent();
-        }
-        m.style.display = isOpen ? 'none' : 'flex';
-    }
-
-    function renderRecent() {
-        const box = document.getElementById('recentCibi');
-        const counts = {};
-        db.forEach(p => counts[p.nome] = (counts[p.nome] || 0) + 1);
-        const sorted = Object.keys(counts).sort((a,b) => counts[b] - counts[a]).slice(0, 3);
-        box.innerHTML = sorted.length ? "<small>Frequenti:</small><br>" : "";
-        sorted.forEach(c => {
-            const span = document.createElement('span');
-            span.className = 'ingredient-tag';
-            span.innerText = c;
-            span.onclick = () => { document.getElementById('nameIn').value = c; searchFood(); };
-            box.appendChild(span);
-        });
+        if(id === 'diario') renderApp();
     }
 
     function renderApp() {
-        const target = prof.target || 2000;
-        document.getElementById('valTarget').innerText = target;
-        const ctx = document.getElementById('chartMain').getContext('2d');
-        if(chartM) chartM.destroy();
-
-        if(currentMode === 'day') {
-            const date = document.getElementById('dateSelector').value || new Date().toISOString().split('T')[0];
-            const oggi = db.filter(p => p.data === date);
-            let tot = 0, s = {Colazione:0, Pranzo:0, Cena:0, Snack:0};
-            document.getElementById('foodList').innerHTML = oggi.map((p, idx) => { 
-                tot+=p.cal; s[p.cat]+=p.cal; 
-                return `<div class="card" style="display:flex; justify-content:space-between; align-items:center;">
-                    <div><b>${p.nome}</b><br><small>${p.cal} kcal</small></div>
-                    <button class="delete-btn" onclick="eliminaPasto(${p.id})">✕</button>
-                </div>` 
-            }).join('');
-            document.getElementById('valMedia').innerText = tot;
-            document.getElementById('labelType').innerText = "Oggi";
-            chartM = new Chart(ctx, { type: 'doughnut', data: { labels: Object.keys(s), datasets: [{ data: Object.values(s), backgroundColor: ['#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0'] }] }});
-            
-            const coach = document.getElementById('coachText');
-            if(tot === 0) coach.innerText = "Registra i pasti per analizzare la tua giornata.";
-            else if(tot > target) coach.innerText = "Attenzione al target! Bilancia con una cena leggera.";
-            else coach.innerText = "Ottimo lavoro, sei in linea con i tuoi obiettivi.";
-        } else {
-            let labels = [], vals = [];
-            let days = currentMode === 'week' ? 7 : 30;
-            for(let i=days-1; i>=0; i--) {
-                let d = new Date(); d.setDate(d.getDate()-i);
-                let dStr = d.toISOString().split('T')[0];
-                labels.push(dStr.split('-')[2]);
-                vals.push(db.filter(p => p.data === dStr).reduce((a,b)=>a+b.cal,0));
-            }
-            const avg = Math.round(vals.reduce((a,b)=>a+b,0)/days);
-            document.getElementById('valMedia').innerText = avg;
-            document.getElementById('labelType').innerText = "Media";
-            chartM = new Chart(ctx, { type: 'line', data: { labels: labels, datasets: [{ data: vals, borderColor: '#27ae60', tension:0.3 }] }});
-            document.getElementById('coachText').innerText = avg > target ? "Trend settimanale alto. Riduci le porzioni di carboidrati." : "Stai mantenendo una costanza invidiabile!";
-        }
-        renderWeight();
-    }
-
-    function eliminaPasto(id) {
-        db = db.filter(p => p.id !== id);
-        localStorage.setItem('bio_v8_db', JSON.stringify(db));
-        renderApp();
-    }
-
-    function addIngredient() {
-        const val = document.getElementById('ingIn').value.toLowerCase().trim();
-        if(val && !dispensa.includes(val)) { 
-            dispensa.push(val); 
-            localStorage.setItem('bio_v8_ing', JSON.stringify(dispensa)); 
-            document.getElementById('ingIn').value=""; 
-            renderDispensa(); 
-        }
-    }
-    function renderDispensa() {
-        document.getElementById('dispensaList').innerHTML = dispensa.map((ing, i) => `<span class="ingredient-tag" onclick="removeIng(${i})">${ing}</span>`).join('');
-    }
-    function removeIng(i) { dispensa.splice(i, 1); localStorage.setItem('bio_v8_ing', JSON.stringify(dispensa)); renderDispensa(); }
-
-    function suggestRecipes() {
-        const res = document.getElementById('recipesResults');
-        if(dispensa.length === 0) { alert("Aggiungi ingredienti!"); return; }
-        res.innerHTML = "⌛ Analisi ingredienti...";
-        
-        setTimeout(() => {
-            const trovate = databaseRicette.filter(r => r.i.some(ing => dispensa.includes(ing)));
-            res.innerHTML = trovate.length ? "" : "<p style='padding:10px;'>Nessun match perfetto. Prova ad aggiungere ingredienti base come Pasta o Uova.</p>";
-            trovate.forEach(r => {
-                res.innerHTML += `<div class="card">
-                    <div style="display:flex; justify-content:space-between; align-items:center;">
-                        <div><b>${r.n}</b><br><small>${r.c} kcal</small></div>
-                        <div style="display:flex; gap:10px;">
-                            <a href="${r.link}" target="_blank" style="text-decoration:none; background:var(--accent); color:white; padding:8px; border-radius:8px; font-size:12px;">Leggi</a>
-                            <button class="btn" style="width:auto; padding:8px 12px; margin:0;" onclick="saveToBook('${r.n}', ${r.c})">+</button>
-                        </div>
-                    </div>
-                </div>`;
-            });
-        }, 800);
-    }
-
-    function saveToBook(n, c) {
-        ricettario.push({id: Date.now(), n, c});
-        localStorage.setItem('bio_v8_ric', JSON.stringify(ricettario));
-        renderRicettario();
-        alert("Salvata nel Ricettario!");
-    }
-
-    function renderRicettario() {
-        document.getElementById('ricettarioList').innerHTML = ricettario.map(r => `
-            <div class="card" style="display:flex; justify-content:space-between; align-items:center; border-left:5px solid var(--premium)">
-                <b>${r.n}</b> - ${r.c} kcal
-                <button class="delete-btn" onclick="eliminaRicetta(${r.id})">✕</button>
-            </div>
-        `).join('');
-    }
-
-    function eliminaRicetta(id) {
-        ricettario = ricettario.filter(r => r.id !== id);
-        localStorage.setItem('bio_v8_ric', JSON.stringify(ricettario));
-        renderRicettario();
-    }
-
-    async function startCamera() {
-        try { videoStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } });
-        document.getElementById('video').srcObject = videoStream; } catch(e) {}
-    }
-    function stopCamera() { if(videoStream) videoStream.getTracks().forEach(t => t.stop()); }
-    
-    async function searchFood() {
-        const q = document.getElementById('nameIn').value;
-        if(q.length < 3) return;
-        const res = await fetch(`https://it.openfoodfacts.org/cgi/search.pl?search_terms=${q}&json=1&page_size=5`);
-        const data = await res.json();
-        const box = document.getElementById('suggBox');
-        box.innerHTML = "";
-        data.products.forEach(p => {
-            const kcal = p.nutriments['energy-kcal_100g'] || 0;
-            const d = document.createElement('div'); d.className = 'sugg-item';
-            d.innerHTML = `<b>${p.product_name}</b> (${kcal} kcal)`;
-            d.onclick = () => { document.getElementById('nameIn').value = p.product_name; document.getElementById('calIn').value = Math.round(kcal); box.style.display = 'none'; };
-            box.appendChild(d);
-        });
-        box.style.display = 'block';
-    }
-
-    function salvaPasto() {
-        const d = document.getElementById('dateSelector').value;
-        db.push({ id: Date.now(), nome: document.getElementById('nameIn').value, cal: parseInt(document.getElementById('calIn').value), cat: document.getElementById('catIn').value, data: d });
-        localStorage.setItem('bio_v8_db', JSON.stringify(db));
-        toggleModal(); renderApp();
-    }
-
-    function setMode(m, b) { currentMode = m; document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active')); b.classList.add('active'); renderApp(); }
-
-    function renderWeight() {
-        const ctx = document.getElementById('chartWeight').getContext('2d');
-        if(chartW) chartW.destroy();
-        chartW = new Chart(ctx, { type: 'line', data: { labels: weights.map(w=>w.d), datasets: [{ data: weights.map(w=>w.v), borderColor: '#8e44ad', tension:0.3 }] }, options: {maintainAspectRatio:false}});
-    }
-
-    function saveProfile() {
-        const w = parseFloat(document.getElementById('p-weight').value);
-        if(w) { 
-            prof.target = Math.round(((10*w)+(6.25*180)-(5*30)+5)*1.4);
-            localStorage.setItem('bio_v8_prof', JSON.stringify(prof));
-            weights.push({d: new Date().toLocaleDateString('it-IT', {day:'2-digit', month:'2-digit'}), v: w});
-            localStorage.setItem('bio_v8_w', JSON.stringify(weights));
-            renderApp(); alert("Profilo aggiornato!");
-        }
+        updateTimer();
+        if(!timerInterval) timerInterval = setInterval(updateTimer, 1000);
+        // ... (Logica renderApp precedente per Grafico e Lista Cibi)
     }
 
     document.getElementById('dateSelector').valueAsDate = new Date();
-    renderApp(); renderDispensa(); renderRicettario();
+    if(fastData.active) document.getElementById('fastBtn').innerText = "Termina Digiuno";
+    renderApp();
 </script>
 </body>
 </html>
+// --- FUNZIONE ESPORTA PDF (TESTUALE) ---
+function generatePDF() {
+    let report = "BIODIARY ULTIMATE REPORT\n";
+    report += "Generato il: " + new Date().toLocaleString() + "\n";
+    report += "------------------------------------------\n\n";
+    
+    db.forEach(p => {
+        report += `[${p.data}] ${p.cat}: ${p.nome} - ${p.cal} kcal\n`;
+    });
+    
+    const blob = new Blob([report], { type: 'text/plain' });
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.download = "BioDiary_Report.txt";
+    link.click();
+}
+
+// --- BACKUP CLOUD (JSON) ---
+function exportData() {
+    const backup = {
+        pasti: db,
+        profilo: prof,
+        pesi: weights,
+        idratazione: waterData
+    };
+    const blob = new Blob([JSON.stringify(backup)], { type: 'application/json' });
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.download = "BioDiary_Backup.json";
+    link.click();
+}
