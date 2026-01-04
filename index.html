@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>BioDiary Ultimate v15</title>
+    <title>BioDiary Ultimate v16</title>
     <link rel="manifest" href="manifest.json">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
@@ -21,14 +21,14 @@
         .timer-display { font-size: 32px; font-weight: bold; text-align: center; color: var(--fasting); margin: 10px 0; }
         .water-glass { font-size: 24px; cursor: pointer; filter: grayscale(1); transition: 0.3s; margin: 0 3px; }
         .water-glass.filled { filter: grayscale(0); transform: scale(1.1); }
+        .ingredient-tag { display: inline-block; background: #e8f5e9; color: #2e7d32; padding: 6px 12px; border-radius: 20px; font-size: 11px; margin: 3px; cursor: pointer; }
         .bottom-nav { position: fixed; bottom: 0; width: 100%; height: 75px; background: white; display: flex; justify-content: space-around; align-items: center; border-top: 1px solid #eee; z-index: 1000; }
         .nav-item { border: none; background: none; color: #888; font-size: 11px; display: flex; flex-direction: column; align-items: center; }
         .nav-item.active { color: var(--primary); font-weight: bold; }
         .fab { position: fixed; bottom: 90px; right: 20px; width: 60px; height: 60px; background: var(--primary); color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 30px; box-shadow: 0 4px 10px rgba(0,0,0,0.2); z-index: 999; border: none; }
         .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 2000; align-items: center; justify-content: center; }
         .modal-content { background: white; width: 90%; border-radius: 20px; padding: 20px; max-height: 85vh; overflow-y: auto; }
-        .sugg-box { background: #fff; border: 1px solid #eee; border-radius: 10px; max-height: 120px; overflow-y: auto; display: none; margin-bottom: 10px; }
-        .sugg-item { padding: 10px; border-bottom: 1px solid #f9f9f9; font-size: 14px; cursor: pointer; }
+        .recipe-card { border-left: 5px solid var(--premium); margin-bottom: 10px; }
     </style>
 </head>
 <body>
@@ -38,7 +38,7 @@
             <h3>Nuovo Pasto</h3>
             <div id="recentFoods" style="margin-bottom:10px;"></div>
             <input type="text" id="nameIn" placeholder="Cerca cibo..." oninput="searchFood()">
-            <div id="suggBox" class="sugg-box"></div>
+            <div id="suggBox" style="background:#fff; border:1px solid #eee; display:none; max-height:100px; overflow:auto;"></div>
             <input type="number" id="calIn" placeholder="Calorie (kcal)">
             <select id="catIn">
                 <option value="Colazione">Colazione</option>
@@ -54,45 +54,36 @@
     <button class="fab" id="fabBtn" onclick="toggleModal()">+</button>
 
     <div id="page-diario" class="page active-page">
-        <h2>Report Alimentare</h2>
+        <h2>Report & Digiuno</h2>
         <div class="report-tabs">
             <button class="tab-btn active" onclick="setReportMode('day', this)">Giorno</button>
             <button class="tab-btn" onclick="setReportMode('week', this)">Settimana</button>
             <button class="tab-btn" onclick="setReportMode('month', this)">Mese</button>
         </div>
         <div class="card">
-            <h3 style="margin:0">⏳ Timer Digiuno</h3>
             <div id="timerStatus" class="timer-display">00:00:00</div>
             <button id="fastBtn" class="btn" style="background:var(--fasting)" onclick="toggleFast()">Inizia Digiuno</button>
         </div>
         <div class="card">
             <input type="date" id="dateSelector" onchange="renderApp()">
-            <div style="display:flex; justify-content:space-around; text-align:center; margin:10px 0;">
-                <div><small id="labelType">Oggi</small><br><b id="valMedia" style="color:var(--primary); font-size:20px;">0</b></div>
-                <div><small>Target</small><br><b id="valTarget" style="font-size:20px;">2000</b></div>
-            </div>
             <div style="height: 180px;"><canvas id="chartMain"></canvas></div>
         </div>
         <div class="card" style="text-align:center;">
-            <h3>💧 Water Tracker</h3>
             <div id="waterBox"></div>
-            <p style="font-size:12px; color:var(--water); margin-top:10px;"><b>Obiettivo: 2 Litri</b></p>
         </div>
         <div id="foodList"></div>
     </div>
 
     <div id="page-premium" class="page">
-        <h2>Smart Kitchen ⭐</h2>
+        <h2>Cucina Pro ⭐</h2>
         <div class="card">
-            <h3>Dispensa</h3>
-            <input type="text" id="ingIn" placeholder="Aggiungi ingrediente...">
-            <button class="btn" onclick="addIngredient()">Aggiungi</button>
-            <div id="dispensaList" style="margin-top:10px;"></div>
+            <h3>La mia Dispensa</h3>
+            <input type="text" id="ingIn" placeholder="Esempio: Pasta, Uova...">
+            <button class="btn" onclick="addIngredient()">Aggiungi alla dispensa</button>
+            <div id="dispensaList" style="margin-top:15px;"></div>
         </div>
-        <button class="btn" style="background:var(--premium); color:black;" onclick="suggestRecipes()">✨ Suggerisci Ricette</button>
-        <div id="recipesResults"></div>
-        <h3 style="margin-top:20px;">I miei Piatti</h3>
-        <div id="ricettarioList"></div>
+        <button class="btn" style="background:var(--accent)" onclick="suggestRecipes()">✨ Suggerisci Ricette AI</button>
+        <div id="recipesResults" style="margin-top:15px;"></div>
     </div>
 
     <div id="page-scan" class="page">
@@ -102,20 +93,18 @@
                 <video id="video" style="width:100%; height:100%; object-fit:cover;" autoplay playsinline></video>
             </div>
             <button class="btn" style="margin-top:15px;" onclick="startCamera()">Accendi Camera</button>
-            <button class="btn" style="background:var(--accent); margin-top:10px;" onclick="simulateBarcodeScan()">Scansione Prodotto</button>
         </div>
     </div>
 
     <div id="page-profile" class="page">
-        <h2>Profilo & Dati</h2>
-        <div class="card">
-            <button class="btn" onclick="exportData()">📥 Esporta Backup</button>
-            <button class="btn" style="background:var(--accent)" onclick="generatePDF()">📄 Scarica Report</button>
-        </div>
+        <h2>Profilo Personale</h2>
         <div class="card">
             <label>Peso (kg)</label><input type="number" id="p-weight">
             <label>Altezza (cm)</label><input type="number" id="p-height">
-            <button class="btn" onclick="saveProfile()">Salva Dati</button>
+            <label>Età</label><input type="number" id="p-age">
+            <label>Sesso</label>
+            <select id="p-sex"><option value="M">Uomo</option><option value="F">Donna</option></select>
+            <button class="btn" onclick="saveProfile()">Salva Profilo</button>
         </div>
         <div class="card">
             <h3>Andamento Peso</h3>
@@ -131,14 +120,19 @@
     </nav>
 
 <script>
-    let db = JSON.parse(localStorage.getItem('bio_v15_db')) || [];
-    let prof = JSON.parse(localStorage.getItem('bio_v15_prof')) || { target: 2000, w: 70, h: 175 };
-    let weights = JSON.parse(localStorage.getItem('bio_v15_w')) || [];
-    let water = JSON.parse(localStorage.getItem('bio_v15_water')) || {};
-    let fast = JSON.parse(localStorage.getItem('bio_v15_fast')) || { active: false, start: null };
-    let dispensa = JSON.parse(localStorage.getItem('bio_v15_ing')) || [];
-    let ricettario = JSON.parse(localStorage.getItem('bio_v15_ric')) || [];
+    let db = JSON.parse(localStorage.getItem('bio_v16_db')) || [];
+    let prof = JSON.parse(localStorage.getItem('bio_v16_prof')) || { w:70, h:175, a:25, s:'M' };
+    let weights = JSON.parse(localStorage.getItem('bio_v16_w')) || [];
+    let water = JSON.parse(localStorage.getItem('bio_v16_water')) || {};
+    let fast = JSON.parse(localStorage.getItem('bio_v16_fast')) || { active: false, start: null };
+    let dispensa = JSON.parse(localStorage.getItem('bio_v16_ing')) || [];
     let chartM = null, chartW = null, videoStream = null, currentReportMode = 'day';
+
+    const recipesDB = [
+        { n: "Carbonara Light", i: ["pasta", "uova"], l: "https://ricette.giallozafferano.it/Spaghetti-alla-Carbonara.html" },
+        { n: "Omelette alle Erbe", i: ["uova", "formaggio"], l: "https://ricette.giallozafferano.it/Omelette.html" },
+        { n: "Pasta al Pomodoro", i: ["pasta", "pomodoro"], l: "https://ricette.giallozafferano.it/Spaghetti-al-pomodoro.html" }
+    ];
 
     function switchPage(id, btn) {
         document.querySelectorAll('.page').forEach(p => p.classList.remove('active-page'));
@@ -150,126 +144,59 @@
         renderApp();
     }
 
-    async function startCamera() {
-        try {
-            videoStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } });
-            document.getElementById('video').srcObject = videoStream;
-        } catch(e) { alert("Attiva i permessi della fotocamera."); }
-    }
-    function stopCamera() { if(videoStream) videoStream.getTracks().forEach(t => t.stop()); }
-
-    function setReportMode(mode, btn) {
-        currentReportMode = mode;
-        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-        btn.classList.add('active');
-        renderApp();
-    }
-
-    function toggleModal() {
-        const m = document.getElementById('addModal');
-        if(m.style.display !== 'flex') {
-            document.getElementById('nameIn').value = "";
-            document.getElementById('calIn').value = "";
-            renderRecentFoods();
+    // --- CUCINA LOGIC ---
+    function addIngredient() {
+        const val = document.getElementById('ingIn').value.toLowerCase().trim();
+        if(val && !dispensa.includes(val)) {
+            dispensa.push(val);
+            localStorage.setItem('bio_v16_ing', JSON.stringify(dispensa));
+            document.getElementById('ingIn').value = "";
+            renderDispensa();
         }
-        m.style.display = (m.style.display === 'flex') ? 'none' : 'flex';
     }
-
-    function renderRecentFoods() {
-        const box = document.getElementById('recentFoods');
-        const unique = [...new Set(db.map(p => p.nome))].slice(-3);
-        box.innerHTML = unique.length ? "<small>Suggeriti:</small><br>" : "";
-        unique.forEach(f => {
-            const span = document.createElement('span');
-            span.className = 'ingredient-tag';
-            span.innerText = f;
-            span.onclick = () => { document.getElementById('nameIn').value = f; searchFood(); };
-            box.appendChild(span);
+    function renderDispensa() {
+        document.getElementById('dispensaList').innerHTML = dispensa.map((ing, i) => 
+            `<span class="ingredient-tag" onclick="removeIng(${i})">${ing} ✕</span>`
+        ).join('');
+    }
+    function removeIng(i) {
+        dispensa.splice(i, 1);
+        localStorage.setItem('bio_v16_ing', JSON.stringify(dispensa));
+        renderDispensa();
+    }
+    function suggestRecipes() {
+        const res = document.getElementById('recipesResults');
+        const trovate = recipesDB.filter(r => r.i.some(ing => dispensa.includes(ing)));
+        res.innerHTML = trovate.length ? "" : "<p>Nessuna ricetta trovata. Aggiungi ingredienti base (uova, pasta, pomodoro).</p>";
+        trovate.forEach(r => {
+            res.innerHTML += `<div class="card recipe-card">
+                <b>${r.n}</b><br>
+                <a href="${r.l}" target="_blank" style="color:var(--accent); font-size:14px;">Vedi Ricetta Intera</a>
+            </div>`;
         });
     }
 
-    async function searchFood() {
-        const q = document.getElementById('nameIn').value;
-        const box = document.getElementById('suggBox');
-        if(q.length < 3) { box.style.display = 'none'; return; }
-        const res = await fetch(`https://it.openfoodfacts.org/cgi/search.pl?search_terms=${q}&json=1&page_size=5`);
-        const data = await res.json();
-        box.innerHTML = "";
-        data.products.forEach(p => {
-            const kcal = Math.round(p.nutriments['energy-kcal_100g'] || 0);
-            const d = document.createElement('div'); d.className = 'sugg-item';
-            d.innerHTML = `<b>${p.product_name}</b> (${kcal} kcal)`;
-            d.onclick = () => { document.getElementById('nameIn').value = p.product_name; document.getElementById('calIn').value = kcal; box.style.display = 'none'; };
-            box.appendChild(d);
-        });
-        box.style.display = 'block';
+    // --- PROFILO LOGIC ---
+    function saveProfile() {
+        prof = { 
+            w: document.getElementById('p-weight').value, 
+            h: document.getElementById('p-height').value, 
+            a: document.getElementById('p-age').value, 
+            s: document.getElementById('p-sex').value 
+        };
+        localStorage.setItem('bio_v16_prof', JSON.stringify(prof));
+        weights.push({ d: new Date().toLocaleDateString('it-IT',{day:'2-digit',month:'2-digit'}), v: prof.w });
+        if(weights.length > 10) weights.shift();
+        localStorage.setItem('bio_v16_w', JSON.stringify(weights));
+        renderWeightChart();
+        alert("Profilo aggiornato!");
     }
 
-    function salvaPasto() {
-        const n = document.getElementById('nameIn').value, c = parseInt(document.getElementById('calIn').value);
-        if(n && c) {
-            db.push({ id: Date.now(), nome: n, cal: c, cat: document.getElementById('catIn').value, data: document.getElementById('dateSelector').value });
-            localStorage.setItem('bio_v15_db', JSON.stringify(db));
-            toggleModal(); renderApp();
-        }
-    }
-
-    function eliminaPasto(id) {
-        db = db.filter(p => p.id !== id);
-        localStorage.setItem('bio_v15_db', JSON.stringify(db));
-        renderApp();
-    }
-
-    function renderApp() {
-        const target = prof.target || 2000;
-        document.getElementById('valTarget').innerText = target;
-        const ctx = document.getElementById('chartMain').getContext('2d');
-        if(chartM) chartM.destroy();
-
-        if(currentReportMode === 'day') {
-            const date = document.getElementById('dateSelector').value || new Date().toISOString().split('T')[0];
-            const oggi = db.filter(p => p.data === date);
-            let tot = 0, s = {Colazione:0, Pranzo:0, Cena:0, Snack:0};
-            document.getElementById('foodList').innerHTML = oggi.map(p => {
-                tot += p.cal; s[p.cat] += p.cal;
-                return `<div class="card" style="display:flex; justify-content:space-between; align-items:center;">
-                    <span><b>${p.nome}</b> (${p.cal} kcal)</span>
-                    <button class="delete-btn" onclick="eliminaPasto(${p.id})">✕</button>
-                </div>`;
-            }).join('');
-            document.getElementById('valMedia').innerText = tot;
-            document.getElementById('labelType').innerText = "Oggi";
-            chartM = new Chart(ctx, { type: 'doughnut', data: { labels: Object.keys(s), datasets: [{ data: Object.values(s), backgroundColor: ['#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0'] }] }, options: { maintainAspectRatio: false }});
-        } else {
-            let labels = [], vals = [];
-            let days = currentReportMode === 'week' ? 7 : 30;
-            for(let i=days-1; i>=0; i--) {
-                let d = new Date(); d.setDate(d.getDate()-i);
-                let dStr = d.toISOString().split('T')[0];
-                labels.push(dStr.split('-')[2]);
-                vals.push(db.filter(p => p.data === dStr).reduce((a,b)=>a+b.cal,0));
-            }
-            document.getElementById('valMedia').innerText = Math.round(vals.reduce((a,b)=>a+b,0)/days);
-            document.getElementById('labelType').innerText = "Media";
-            document.getElementById('foodList').innerHTML = "";
-            chartM = new Chart(ctx, { type: 'line', data: { labels: labels, datasets: [{ data: vals, borderColor: '#27ae60', tension:0.3 }] }, options: { maintainAspectRatio: false }});
-        }
-        renderWater(); updateTimer();
-    }
-
-    function renderWater() {
-        const date = document.getElementById('dateSelector').value;
-        const count = water[date] || 0;
-        let h = "";
-        for(let i=1; i<=8; i++) h += `<span class="water-glass ${i<=count?'filled':''}" onclick="setWater(${i})">💧</span>`;
-        document.getElementById('waterBox').innerHTML = h;
-    }
-    function setWater(n) { water[document.getElementById('dateSelector').value] = n; localStorage.setItem('bio_v15_water', JSON.stringify(water)); renderWater(); }
-
+    // --- CORE (DIARIO, SCAN, TIMER) ---
     function toggleFast() {
         fast.active = !fast.active;
         fast.start = fast.active ? Date.now() : null;
-        localStorage.setItem('bio_v15_fast', JSON.stringify(fast));
+        localStorage.setItem('bio_v16_fast', JSON.stringify(fast));
         updateTimer();
     }
     function updateTimer() {
@@ -284,24 +211,47 @@
             document.getElementById('fastBtn').innerText = "Inizia Digiuno";
         }
     }
-
-    function saveProfile() {
-        prof.w = document.getElementById('p-weight').value;
-        prof.h = document.getElementById('p-height').value;
-        localStorage.setItem('bio_v15_prof', JSON.stringify(prof));
-        weights.push({ d: new Date().toLocaleDateString('it-IT',{day:'2-digit',month:'2-digit'}), v: prof.w });
-        localStorage.setItem('bio_v15_w', JSON.stringify(weights));
-        renderWeightChart(); alert("Profilo Salvato!");
+    async function startCamera() {
+        try { videoStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } });
+        document.getElementById('video').srcObject = videoStream; } catch(e) {}
     }
+    function stopCamera() { if(videoStream) videoStream.getTracks().forEach(t => t.stop()); }
+    
+    function renderApp() {
+        const date = document.getElementById('dateSelector').value || new Date().toISOString().split('T')[0];
+        const oggi = db.filter(p => p.data === date);
+        let tot = 0, s = {Colazione:0, Pranzo:0, Cena:0, Snack:0};
+        document.getElementById('foodList').innerHTML = oggi.map(p => {
+            tot += p.cal; s[p.cat] += p.cal;
+            return `<div class="card" style="display:flex; justify-content:space-between;"><b>${p.nome}</b> <span>${p.cal} kcal</span></div>`;
+        }).join('');
+        const ctx = document.getElementById('chartMain').getContext('2d');
+        if(chartM) chartM.destroy();
+        chartM = new Chart(ctx, { type: 'doughnut', data: { labels: Object.keys(s), datasets: [{ data: Object.values(s), backgroundColor: ['#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0'] }] }, options: { maintainAspectRatio: false }});
+        renderWater();
+    }
+    function renderWater() {
+        const count = water[document.getElementById('dateSelector').value] || 0;
+        let h = "";
+        for(let i=1; i<=8; i++) h += `<span class="water-glass ${i<=count?'filled':''}" onclick="setWater(${i})">💧</span>`;
+        document.getElementById('waterBox').innerHTML = h;
+    }
+    function setWater(n) { water[document.getElementById('dateSelector').value] = n; localStorage.setItem('bio_v16_water', JSON.stringify(water)); renderWater(); }
+    
     function renderWeightChart() {
         const ctx = document.getElementById('chartWeight').getContext('2d');
         if(chartW) chartW.destroy();
         chartW = new Chart(ctx, { type: 'line', data: { labels: weights.map(w=>w.d), datasets: [{ data: weights.map(w=>w.v), borderColor: '#8e44ad', tension: 0.3 }] }, options: { maintainAspectRatio: false }});
     }
 
+    // INIT
     document.getElementById('dateSelector').valueAsDate = new Date();
+    document.getElementById('p-weight').value = prof.w;
+    document.getElementById('p-height').value = prof.h;
+    document.getElementById('p-age').value = prof.a;
+    document.getElementById('p-sex').value = prof.s;
     setInterval(updateTimer, 1000);
-    renderApp();
+    renderApp(); renderDispensa(); renderWeightChart();
 </script>
 </body>
 </html>
