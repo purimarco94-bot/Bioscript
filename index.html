@@ -3,44 +3,41 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>BioDiary Pro Elite</title>
+    <title>BioDiary Elite Pro</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
-        :root { --primary: #27ae60; --accent: #8e44ad; --bg: #f0f2f5; --white: #ffffff; --text: #2c3e50; }
-        body { font-family: -apple-system, sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 0; }
-        
-        /* Layout */
+        :root { --primary: #27ae60; --accent: #8e44ad; --bg: #f4f7f6; --white: #ffffff; }
+        body { font-family: -apple-system, sans-serif; background: var(--bg); margin: 0; padding: 0; }
         .page { display: none; padding: 20px 15px 100px 15px; min-height: 100vh; box-sizing: border-box; }
-        .active-page { display: block; animation: slideUp 0.3s ease; }
-        @keyframes slideUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-
+        .active-page { display: block; }
         .card { background: var(--white); border-radius: 20px; padding: 18px; margin-bottom: 15px; box-shadow: 0 4px 12px rgba(0,0,0,0.06); }
         
-        /* Diario & Report */
-        .report-tabs { display: flex; gap: 5px; margin-bottom: 15px; background: #ddd; border-radius: 10px; padding: 3px; }
-        .tab-btn { flex: 1; border: none; padding: 8px; border-radius: 8px; font-size: 12px; cursor: pointer; background: transparent; transition: 0.2s; }
+        /* Navigazione */
+        .report-tabs { display: flex; gap: 5px; margin-bottom: 15px; background: #e0e0e0; border-radius: 12px; padding: 4px; }
+        .tab-btn { flex: 1; border: none; padding: 10px; border-radius: 10px; font-size: 13px; background: transparent; cursor: pointer; }
         .tab-btn.active { background: white; font-weight: bold; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
-
-        /* UI Elementi */
-        .fab { position: fixed; bottom: 85px; right: 20px; width: 56px; height: 56px; background: var(--primary); color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 24px; box-shadow: 0 4px 12px rgba(39, 174, 96, 0.4); z-index: 99; border: none; }
-        input, select { width: 100%; padding: 12px; margin: 8px 0; border: 1px solid #e0e0e0; border-radius: 12px; font-size: 15px; box-sizing: border-box; background: #fdfdfd; }
-        .btn { background: var(--primary); color: white; border: none; padding: 14px; border-radius: 12px; width: 100%; font-weight: bold; font-size: 16px; margin-top: 10px; cursor: pointer; }
         
-        /* Bottom Nav */
-        .bottom-nav { position: fixed; bottom: 0; width: 100%; height: 75px; background: white; display: flex; justify-content: space-around; align-items: center; border-top: 1px solid #eee; padding-bottom: env(safe-area-inset-bottom); }
-        .nav-item { border: none; background: none; color: #a0a0a0; font-size: 11px; display: flex; flex-direction: column; align-items: center; gap: 4px; }
-        .nav-item.active { color: var(--primary); }
-        .nav-icon { font-size: 22px; }
+        .bottom-nav { position: fixed; bottom: 0; width: 100%; height: 75px; background: white; display: flex; justify-content: space-around; align-items: center; border-top: 1px solid #eee; z-index: 1000; }
+        .nav-item { border: none; background: none; color: #888; font-size: 11px; display: flex; flex-direction: column; align-items: center; }
+        .nav-item.active { color: var(--primary); font-weight: bold; }
 
-        .ai-advice-box { background: linear-gradient(135deg, #f3e5f5, #e1f5fe); border-radius: 15px; padding: 15px; font-size: 14px; border-left: 5px solid var(--accent); margin-top: 15px; }
+        /* UI */
+        .fab { position: fixed; bottom: 90px; right: 20px; width: 60px; height: 60px; background: var(--primary); color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 30px; box-shadow: 0 4px 10px rgba(0,0,0,0.2); z-index: 999; border: none; }
+        input, select { width: 100%; padding: 14px; margin: 8px 0; border: 1px solid #eee; border-radius: 12px; font-size: 16px; box-sizing: border-box; }
+        .btn { background: var(--primary); color: white; border: none; padding: 15px; border-radius: 12px; width: 100%; font-weight: bold; cursor: pointer; }
+        
+        .ai-box { background: linear-gradient(135deg, #f3e5f5, #e3f2fd); padding: 15px; border-radius: 15px; border-left: 5px solid var(--accent); font-size: 14px; margin-top: 10px; }
+        .suggestions { background: white; border: 1px solid #eee; border-radius: 10px; max-height: 150px; overflow-y: auto; display: none; margin-top: -8px; margin-bottom: 10px; }
+        .sugg-item { padding: 12px; border-bottom: 1px solid #f9f9f9; font-size: 14px; }
     </style>
 </head>
 <body>
 
     <div id="addModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.6); z-index:2000; align-items:center; justify-content:center;">
-        <div class="card" style="width:85%; max-width:400px;">
-            <h3 style="margin-top:0">Aggiungi Pasto</h3>
-            <input type="text" id="nameIn" placeholder="Cerca cibo o scrivi nome...">
+        <div class="card" style="width:90%; max-width:400px;">
+            <h3 style="margin-top:0">Nuovo Pasto</h3>
+            <input type="text" id="nameIn" placeholder="Cerca cibo online..." oninput="searchFood()">
+            <div id="suggBox" class="suggestions"></div>
             <input type="number" id="calIn" placeholder="Calorie (kcal)">
             <select id="catIn">
                 <option value="Colazione">Colazione ☕</option>
@@ -48,245 +45,222 @@
                 <option value="Cena">Cena 🥗</option>
                 <option value="Snack">Snack 🍎</option>
             </select>
-            <button class="btn" onclick="salvaPasto()">Salva</button>
-            <button onclick="toggleModal()" style="background:none; border:none; color:#999; width:100%; margin-top:12px;">Chiudi</button>
+            <button class="btn" onclick="salvaPasto()">Aggiungi</button>
+            <button onclick="toggleModal()" style="background:none; border:none; color:red; width:100%; margin-top:15px;">Annulla</button>
         </div>
     </div>
 
     <button class="fab" id="fabBtn" onclick="toggleModal()">+</button>
 
     <div id="page-diario" class="page active-page">
-        <h2 style="margin-bottom:10px;">Diario Alimentare</h2>
-        
+        <h2>Report Alimentare</h2>
         <div class="report-tabs">
-            <button class="tab-btn active" onclick="setReportMode('day', this)">Giorno</button>
-            <button class="tab-btn" onclick="setReportMode('week', this)">Settimana</button>
-            <button class="tab-btn" onclick="setReportMode('month', this)">Mese</button>
+            <button class="tab-btn active" onclick="setMode('day', this)">Giorno</button>
+            <button class="tab-btn" onclick="setMode('week', this)">Settimana</button>
+            <button class="tab-btn" onclick="setMode('month', this)">Mese</button>
         </div>
-
         <div class="card">
             <input type="date" id="dateSelector" onchange="renderApp()">
-            <div id="summaryDisplay" style="display:flex; justify-content:space-between; margin:15px 0; text-align:center;">
-                <div><small>Media</small><br><b id="avgDisplay" style="color:var(--primary); font-size:18px;">0</b></div>
-                <div><small>Target</small><br><b id="targetDisplay" style="font-size:18px;">2000</b></div>
-                <div><small>Stato</small><br><b id="statusDisplay" style="font-size:14px;">-</b></div>
+            <div style="display:flex; justify-content:space-around; text-align:center; margin:15px 0;">
+                <div><small>Media</small><br><b id="valMedia" style="color:var(--primary); font-size:20px;">0</b></div>
+                <div><small>Target</small><br><b id="valTarget" style="font-size:20px;">2000</b></div>
             </div>
-            <div style="height: 200px;"><canvas id="mainChart"></canvas></div>
+            <div style="height: 220px;"><canvas id="chartMain"></canvas></div>
         </div>
-
-        <div id="aiCoach" class="ai-advice-box">
-            <b>🤖 Diet Coach:</b> <span id="adviceText">Aggiungi pasti per ricevere un'analisi della tua dieta.</span>
-        </div>
-
+        <div id="coachBox" class="ai-box">🤖 <b>Diet Coach:</b> <span id="coachText">...</span></div>
         <div id="foodList" style="margin-top:15px;"></div>
     </div>
 
     <div id="page-scan" class="page">
         <h2>Scanner AI</h2>
-        <div class="card" style="text-align:center;">
-            <div style="background:#000; border-radius:15px; height:350px; display:flex; align-items:center; justify-content:center; color:white;">
-                Fotocamera attiva...
-            </div>
-            <button class="btn" style="background:var(--accent)">Scansiona Piatto</button>
+        <div class="card" style="text-align:center; background:#000; height:400px; color:white; display:flex; align-items:center; justify-content:center; border-radius:25px;">
+            Fotocamera pronta...
         </div>
+        <button class="btn" style="background:var(--accent); margin-top:20px;">Analizza Piatto</button>
     </div>
 
     <div id="page-profile" class="page">
         <h2>Il mio Profilo</h2>
         <div class="card">
-            <h4 style="margin:0 0 10px 0">Dati Fisici</h4>
+            <label>Peso Attuale (kg)</label>
+            <input type="number" id="p-weight" placeholder="es. 80">
+            <label>Altezza (cm)</label>
+            <input type="number" id="p-height" placeholder="es. 180">
+            <label>Età e Sesso</label>
             <div style="display:flex; gap:10px;">
-                <input type="number" id="p-weight" placeholder="Peso (kg)">
-                <input type="number" id="p-height" placeholder="Altezza (cm)">
-            </div>
-            <div style="display:flex; gap:10px;">
-                <input type="number" id="p-age" placeholder="Età">
+                <input type="number" id="p-age" placeholder="Anni">
                 <select id="p-sex"><option value="M">Uomo</option><option value="F">Donna</option></select>
             </div>
-            <label><small>Circonferenza Vita (cm)</small></label>
-            <input type="number" id="p-waist" placeholder="es. 85">
-            
-            <h4 style="margin:15px 0 10px 0">Obiettivi & Lifestyle</h4>
-            <select id="p-goal">
-                <option value="lose">Dimagrire (Definizione)</option>
-                <option value="keep">Mantenimento</option>
-                <option value="gain">Aumento Massa</option>
-            </select>
-            <select id="p-activity">
-                <option value="1.2">Sedentario</option>
-                <option value="1.4">Attività Leggera</option>
-                <option value="1.6">Attività Moderata</option>
-                <option value="1.9">Atleta Prof.</option>
-            </select>
-            <button class="btn" onclick="saveProfile()">Salva Profilo</button>
+            <button class="btn" onclick="saveProfile()">Aggiorna e Salva Peso</button>
         </div>
-        
-        <div id="bmiCard" class="card" style="display:none; background:var(--primary); color:white;">
-            </div>
+
+        <div class="card">
+            <h3>📈 Andamento Peso</h3>
+            <div style="height: 200px;"><canvas id="chartWeight"></canvas></div>
+        </div>
     </div>
 
     <nav class="bottom-nav">
-        <button class="nav-item active" onclick="switchPage('diario', this)"><span class="nav-icon">📊</span><span>Report</span></button>
-        <button class="nav-item" onclick="switchPage('scan', this)"><span class="nav-icon">📸</span><span>Scanner</span></button>
-        <button class="nav-item" onclick="switchPage('profile', this)"><span class="nav-icon">👤</span><span>Profilo</span></button>
+        <button class="nav-item active" onclick="switchPage('diario', this)">📊<br>Report</button>
+        <button class="nav-item" onclick="switchPage('scan', this)">📸<br>Scanner</button>
+        <button class="nav-item" onclick="switchPage('profile', this)">👤<br>Profilo</button>
     </nav>
 
 <script>
-    let db = JSON.parse(localStorage.getItem('bioElite_db')) || [];
-    let profile = JSON.parse(localStorage.getItem('bioElite_prof')) || null;
-    let currentMode = 'day'; // day, week, month
-    let myChart = null;
+    let db = JSON.parse(localStorage.getItem('bioElite_V4_db')) || [];
+    let prof = JSON.parse(localStorage.getItem('bioElite_V4_prof')) || { target: 2000 };
+    let weightLog = JSON.parse(localStorage.getItem('bioElite_V4_weights')) || [];
+    let currentMode = 'day';
+    let chartM = null, chartW = null;
 
+    // --- SUGGERIMENTI LIVE ---
+    async function searchFood() {
+        const q = document.getElementById('nameIn').value;
+        const box = document.getElementById('suggBox');
+        if(q.length < 3) { box.style.display = 'none'; return; }
+        
+        try {
+            const res = await fetch(`https://it.openfoodfacts.org/cgi/search.pl?search_terms=${q}&json=1&page_size=5`);
+            const data = await res.json();
+            box.innerHTML = "";
+            data.products.forEach(p => {
+                const kcal = p.nutriments['energy-kcal_100g'] || 0;
+                const d = document.createElement('div');
+                d.className = 'sugg-item';
+                d.innerHTML = `<b>${p.product_name}</b><br><small>${kcal} kcal/100g</small>`;
+                d.onclick = () => {
+                    document.getElementById('nameIn').value = p.product_name;
+                    document.getElementById('calIn').value = Math.round(kcal);
+                    box.style.display = 'none';
+                };
+                box.appendChild(d);
+            });
+            box.style.display = 'block';
+        } catch(e) {}
+    }
+
+    // --- GESTIONE DATI ---
+    function saveProfile() {
+        const w = parseFloat(document.getElementById('p-weight').value);
+        const h = parseFloat(document.getElementById('p-height').value);
+        const a = parseInt(document.getElementById('p-age').value);
+        const s = document.getElementById('p-sex').value;
+
+        if(w && h && a) {
+            let bmr = (10 * w) + (6.25 * h) - (5 * a) + (s === 'M' ? 5 : -161);
+            prof = { w, h, a, s, target: Math.round(bmr * 1.4) };
+            localStorage.setItem('bioElite_V4_prof', JSON.stringify(prof));
+            
+            // Log Peso
+            weightLog.push({ date: new Date().toLocaleDateString('it-IT', {day:'2-digit', month:'2-digit'}), val: w });
+            if(weightLog.length > 10) weightLog.shift();
+            localStorage.setItem('bioElite_V4_weights', JSON.stringify(weightLog));
+            
+            alert("Dati salvati e Peso registrato!");
+            renderApp();
+        }
+    }
+
+    function salvaPasto() {
+        const n = document.getElementById('nameIn').value, c = parseInt(document.getElementById('calIn').value);
+        const d = document.getElementById('dateSelector').value;
+        if(n && c) {
+            db.push({ id: Date.now(), nome: n, cal: c, cat: document.getElementById('catIn').value, data: d });
+            localStorage.setItem('bioElite_V4_db', JSON.stringify(db));
+            toggleModal(); renderApp();
+        }
+    }
+
+    // --- RENDERING ---
+    function renderApp() {
+        const date = document.getElementById('dateSelector').value;
+        const oggi = db.filter(p => p.data === date);
+        const list = document.getElementById('foodList');
+        const target = prof.target || 2000;
+        document.getElementById('valTarget').innerText = target;
+        list.innerHTML = "";
+
+        let stats = { Colazione:0, Pranzo:0, Cena:0, Snack:0 };
+        let tot = 0;
+
+        if(currentMode === 'day') {
+            oggi.forEach(p => {
+                tot += p.cal; stats[p.cat] += p.cal;
+                list.innerHTML += `<div class="card" style="margin-bottom:8px; display:flex; justify-content:space-between;">
+                    <span><b>${p.cat}</b>: ${p.nome}</span> <b>${p.cal} kcal</b>
+                </div>`;
+            });
+            document.getElementById('valMedia').innerText = tot;
+            updateChartMain('doughnut', Object.keys(stats), Object.values(stats), ['#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0']);
+            document.getElementById('coachText').innerText = tot > target ? "Hai superato il target. Bilancia con un'attività leggera!" : "Sei in linea. Ottimo autocontrollo!";
+        } else {
+            // Vista Settimana/Mese
+            let labels = [], values = [];
+            let days = currentMode === 'week' ? 7 : 14;
+            for(let i=days-1; i>=0; i--) {
+                let d = new Date(); d.setDate(d.getDate() - i);
+                let dStr = d.toISOString().split('T')[0];
+                labels.push(dStr.split('-')[2]);
+                values.push(db.filter(p => p.data === dStr).reduce((s,p)=>s+p.cal, 0));
+            }
+            document.getElementById('valMedia').innerText = Math.round(values.reduce((a,b)=>a+b,0)/days);
+            updateChartMain('line', labels, values, '#27ae60');
+            list.innerHTML = "<p style='text-align:center; color:#999;'>Dettagli disponibili solo in vista Giorno</p>";
+        }
+        renderWeightChart();
+    }
+
+    function updateChartMain(type, labels, data, colors) {
+        const ctx = document.getElementById('chartMain').getContext('2d');
+        if(chartM) chartM.destroy();
+        chartM = new Chart(ctx, {
+            type: type,
+            data: { labels: labels, datasets: [{ data: data, backgroundColor: colors, borderColor: type==='line'?'#27ae60':'#fff', tension: 0.4 }] },
+            options: { maintainAspectRatio: false, plugins: { legend: { display: type==='doughnut', position: 'bottom' } } }
+        });
+    }
+
+    function renderWeightChart() {
+        const ctx = document.getElementById('chartWeight').getContext('2d');
+        if(chartW) chartW.destroy();
+        chartW = new Chart(ctx, {
+            type: 'line',
+            data: { 
+                labels: weightLog.map(l => l.date), 
+                datasets: [{ label: 'Peso (kg)', data: weightLog.map(l => l.val), borderColor: '#8e44ad', backgroundColor: 'rgba(142, 68, 173, 0.1)', fill: true, tension: 0.3 }] 
+            },
+            options: { maintainAspectRatio: false }
+        });
+    }
+
+    // Navigation Utils
     function switchPage(id, btn) {
         document.querySelectorAll('.page').forEach(p => p.classList.remove('active-page'));
         document.getElementById('page-'+id).classList.add('active-page');
         document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
         btn.classList.add('active');
         document.getElementById('fabBtn').style.display = (id === 'diario') ? 'flex' : 'none';
-        if(id === 'diario') renderApp();
+        renderApp();
     }
-
+    function setMode(m, b) {
+        currentMode = m;
+        document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+        b.classList.add('active');
+        renderApp();
+    }
     function toggleModal() {
         const m = document.getElementById('addModal');
         m.style.display = (m.style.display === 'flex') ? 'none' : 'flex';
     }
 
-    function setReportMode(mode, btn) {
-        currentMode = mode;
-        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-        btn.classList.add('active');
-        renderApp();
-    }
-
-    function saveProfile() {
-        const data = {
-            w: document.getElementById('p-weight').value,
-            h: document.getElementById('p-height').value,
-            a: document.getElementById('p-age').value,
-            s: document.getElementById('p-sex').value,
-            g: document.getElementById('p-goal').value,
-            act: document.getElementById('p-activity').value,
-            waist: document.getElementById('p-waist').value
-        };
-        
-        // Calcolo BMR (Mifflin-St Jeor)
-        let bmr = (10 * data.w) + (6.25 * data.h) - (5 * data.a) + (data.s === 'M' ? 5 : -161);
-        let tdee = Math.round(bmr * data.act);
-        
-        // Regolazione obiettivo
-        if(data.g === 'lose') tdee -= 400;
-        if(data.g === 'gain') tdee += 300;
-        
-        data.target = tdee;
-        localStorage.setItem('bioElite_prof', JSON.stringify(data));
-        profile = data;
-        alert("Profilo Salvato! Obiettivo: " + tdee + " kcal");
-        loadProfileFields();
-        renderApp();
-    }
-
-    function loadProfileFields() {
-        if(!profile) return;
-        document.getElementById('p-weight').value = profile.w;
-        document.getElementById('p-height').value = profile.h;
-        document.getElementById('p-age').value = profile.a;
-        document.getElementById('p-sex').value = profile.s;
-        document.getElementById('p-goal').value = profile.g;
-        document.getElementById('p-activity').value = profile.act;
-        document.getElementById('p-waist').value = profile.waist;
-        
-        const bmi = (profile.w / ((profile.h/100)**2)).toFixed(1);
-        const bmiCard = document.getElementById('bmiCard');
-        bmiCard.style.display = "block";
-        bmiCard.innerHTML = `<b>Risultato:</b> BMI ${bmi} | Target: ${profile.target} kcal<br><small>Circonferenza vita: ${profile.waist} cm</small>`;
-    }
-
-    function salvaPasto() {
-        const n = document.getElementById('nameIn').value;
-        const c = parseInt(document.getElementById('calIn').value);
-        const d = document.getElementById('dateSelector').value;
-        if(n && c) {
-            db.push({ id: Date.now(), nome: n, cal: c, cat: document.getElementById('catIn').value, data: d });
-            localStorage.setItem('bioElite_db', JSON.stringify(db));
-            toggleModal(); renderApp();
-        }
-    }
-
-    function renderApp() {
-        const selDate = new Date(document.getElementById('dateSelector').value);
-        const target = profile ? profile.target : 2000;
-        document.getElementById('targetDisplay').innerText = target;
-
-        let filtered = [];
-        let labels = [];
-        let dataValues = [];
-
-        if(currentMode === 'day') {
-            const dateStr = selDate.toISOString().split('T')[0];
-            filtered = db.filter(p => p.data === dateStr);
-            const stats = { Colazione:0, Pranzo:0, Cena:0, Snack:0 };
-            filtered.forEach(p => stats[p.cat] += p.cal);
-            labels = Object.keys(stats);
-            dataValues = Object.values(stats);
-            
-            let tot = filtered.reduce((s, p) => s + p.cal, 0);
-            document.getElementById('avgDisplay').innerText = tot;
-            document.getElementById('statusDisplay').innerText = tot > target ? "Sopra" : "Ottimo";
-            renderFoodList(filtered);
-            updateAdvice(tot, target, 'day');
-        } else {
-            // Logica Settimana / Mese
-            const days = currentMode === 'week' ? 7 : 30;
-            let sumTotal = 0;
-            for(let i=days-1; i>=0; i--) {
-                let d = new Date(selDate);
-                d.setDate(d.getDate() - i);
-                let dStr = d.toISOString().split('T')[0];
-                let dailySum = db.filter(p => p.data === dStr).reduce((s, p) => s + p.cal, 0);
-                labels.push(dStr.split('-')[2]);
-                dataValues.push(dailySum);
-                sumTotal += dailySum;
-            }
-            document.getElementById('avgDisplay').innerText = Math.round(sumTotal/days);
-            document.getElementById('foodList').innerHTML = "<p style='text-align:center; color:#999;'>Passa alla vista Giorno per i dettagli dei pasti.</p>";
-            updateAdvice(sumTotal/days, target, 'history');
-        }
-
-        const ctx = document.getElementById('mainChart').getContext('2d');
-        if(myChart) myChart.destroy();
-        myChart = new Chart(ctx, {
-            type: currentMode === 'day' ? 'doughnut' : 'line',
-            data: { labels: labels, datasets: [{ data: dataValues, backgroundColor: '#27ae60', borderColor: '#27ae60', tension: 0.3, fill: true }] },
-            options: { maintainAspectRatio: false, plugins: { legend: { display: currentMode === 'day' } } }
-        });
-    }
-
-    function renderFoodList(list) {
-        const container = document.getElementById('foodList');
-        container.innerHTML = "";
-        list.forEach(p => {
-            container.innerHTML += `<div class="card" style="margin-bottom:8px; padding:12px; display:flex; justify-content:space-between; align-items:center;">
-                <span><b>${p.nome}</b><br><small>${p.cat}</small></span>
-                <span style="color:var(--primary); font-weight:bold;">${p.cal} kcal</span>
-            </div>`;
-        });
-    }
-
-    function updateAdvice(val, target, type) {
-        const box = document.getElementById('adviceText');
-        if(val === 0) { box.innerText = "Inizia a registrare i tuoi pasti per l'analisi AI."; return; }
-        
-        if(type === 'day') {
-            if(val > target) box.innerText = "Oggi hai superato il target. Prova a compensare con una camminata di 30 minuti.";
-            else box.innerText = "Ottimo lavoro! Sei perfettamente in linea con il tuo obiettivo di oggi.";
-        } else {
-            if(val > target) box.innerText = "Trend Settimanale: Sei leggermente sopra la media. Riduci gli snack fuori pasto.";
-            else box.innerText = "La tua costanza è eccellente. Il corpo sta rispondendo bene al regime.";
-        }
-    }
-
+    // Init
     document.getElementById('dateSelector').valueAsDate = new Date();
-    loadProfileFields();
+    if(prof.w) {
+        document.getElementById('p-weight').value = prof.w;
+        document.getElementById('p-height').value = prof.h;
+        document.getElementById('p-age').value = prof.a;
+        document.getElementById('p-sex').value = prof.s;
+    }
     renderApp();
 </script>
 </body>
