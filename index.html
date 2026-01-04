@@ -3,29 +3,30 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>BioDiary Ultimate v13</title>
+    <title>BioDiary Ultimate v14</title>
     <link rel="manifest" href="manifest.json">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
-        :root { --primary: #27ae60; --accent: #8e44ad; --water: #3498db; --fasting: #f39c12; --bg: #f4f7f6; --white: #ffffff; --danger: #e74c3c; }
-        body { font-family: -apple-system, sans-serif; background: var(--bg); margin: 0; padding: 0; color: #2c3e50; -webkit-tap-highlight-color: transparent; }
+        :root { --primary: #27ae60; --accent: #8e44ad; --water: #3498db; --fasting: #f39c12; --bg: #f4f7f6; --white: #ffffff; --danger: #e74c3c; --premium: #f1c40f; }
+        body { font-family: -apple-system, sans-serif; background: var(--bg); margin: 0; padding: 0; color: #2c3e50; }
         .page { display: none; padding: 20px 15px 100px 15px; min-height: 100vh; box-sizing: border-box; }
-        .active-page { display: block; animation: fadeIn 0.3s; }
-        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        .active-page { display: block; }
         .card { background: var(--white); border-radius: 20px; padding: 18px; margin-bottom: 15px; box-shadow: 0 4px 12px rgba(0,0,0,0.06); }
         .btn { background: var(--primary); color: white; border: none; padding: 15px; border-radius: 12px; width: 100%; font-weight: bold; cursor: pointer; margin-top: 5px; }
-        .delete-btn { color: var(--danger); border: none; background: none; font-size: 18px; cursor: pointer; }
+        .delete-btn { color: var(--danger); border: none; background: none; font-size: 18px; cursor: pointer; font-weight: bold; }
         input, select { width: 100%; padding: 12px; margin: 8px 0; border: 1px solid #eee; border-radius: 10px; box-sizing: border-box; font-size: 16px; }
         .timer-display { font-size: 32px; font-weight: bold; text-align: center; color: var(--fasting); margin: 10px 0; }
-        .water-glass { font-size: 24px; cursor: pointer; filter: grayscale(1); transition: 0.3s; margin: 0 5px; }
-        .water-glass.filled { filter: grayscale(0); transform: scale(1.2); }
-        .ingredient-tag { display: inline-block; background: #e8f5e9; color: #2e7d32; padding: 6px 12px; border-radius: 20px; font-size: 12px; margin: 4px; cursor: pointer; }
+        .water-glass { font-size: 24px; cursor: pointer; filter: grayscale(1); transition: 0.3s; margin: 0 3px; }
+        .water-glass.filled { filter: grayscale(0); transform: scale(1.1); }
+        .ingredient-tag { display: inline-block; background: #e8f5e9; color: #2e7d32; padding: 6px 12px; border-radius: 20px; font-size: 11px; margin: 3px; cursor: pointer; }
         .bottom-nav { position: fixed; bottom: 0; width: 100%; height: 75px; background: white; display: flex; justify-content: space-around; align-items: center; border-top: 1px solid #eee; z-index: 1000; }
         .nav-item { border: none; background: none; color: #888; font-size: 11px; display: flex; flex-direction: column; align-items: center; }
         .nav-item.active { color: var(--primary); font-weight: bold; }
         .fab { position: fixed; bottom: 90px; right: 20px; width: 60px; height: 60px; background: var(--primary); color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 30px; box-shadow: 0 4px 10px rgba(0,0,0,0.2); z-index: 999; border: none; }
         .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 2000; align-items: center; justify-content: center; }
-        .modal-content { background: white; width: 90%; border-radius: 20px; padding: 20px; max-height: 80vh; overflow-y: auto; }
+        .modal-content { background: white; width: 90%; border-radius: 20px; padding: 20px; max-height: 85vh; overflow-y: auto; }
+        .sugg-box { background: #fff; border: 1px solid #eee; border-radius: 10px; max-height: 120px; overflow-y: auto; display: none; margin-bottom: 10px; }
+        .sugg-item { padding: 10px; border-bottom: 1px solid #f9f9f9; font-size: 14px; cursor: pointer; }
     </style>
 </head>
 <body>
@@ -33,8 +34,9 @@
     <div id="addModal" class="modal">
         <div class="modal-content">
             <h3>Nuovo Pasto</h3>
-            <input type="text" id="nameIn" placeholder="Cerca cibo..." oninput="searchFood()">
-            <div id="suggBox" style="background:#f9f9f9; max-height:100px; overflow:auto; display:none;"></div>
+            <div id="recentFoods" style="margin-bottom:10px;"></div>
+            <input type="text" id="nameIn" placeholder="Cerca o inserisci cibo..." oninput="searchFood()">
+            <div id="suggBox" class="sugg-box"></div>
             <input type="number" id="calIn" placeholder="Calorie (kcal)">
             <select id="catIn">
                 <option value="Colazione">Colazione</option>
@@ -43,16 +45,16 @@
                 <option value="Snack">Snack</option>
             </select>
             <button class="btn" onclick="salvaPasto()">Aggiungi</button>
-            <button onclick="toggleModal()" style="background:none; border:none; color:red; width:100%; margin-top:10px;">Annulla</button>
+            <button onclick="toggleModal()" style="background:none; border:none; color:red; width:100%; margin-top:10px;">Esci</button>
         </div>
     </div>
 
-    <button class="fab" onclick="toggleModal()">+</button>
+    <button class="fab" id="fabBtn" onclick="toggleModal()">+</button>
 
     <div id="page-diario" class="page active-page">
-        <h2>Diario & Report</h2>
+        <h2>Report & Digiuno</h2>
         <div class="card">
-            <h3 style="margin:0">⏳ Digiuno</h3>
+            <h3 style="margin:0">⏳ Timer Digiuno</h3>
             <div id="timerStatus" class="timer-display">00:00:00</div>
             <button id="fastBtn" class="btn" style="background:var(--fasting)" onclick="toggleFast()">Inizia Digiuno</button>
         </div>
@@ -60,46 +62,55 @@
             <input type="date" id="dateSelector" onchange="renderApp()">
             <div style="height: 180px;"><canvas id="chartMain"></canvas></div>
         </div>
-        <div class="card">
+        <div class="card" style="text-align:center;">
             <h3>💧 Water Tracker</h3>
-            <div id="waterBox" style="text-align:center;"></div>
+            <div id="waterBox"></div>
+            <p style="font-size:12px; color:var(--water); margin-top:10px;"><b>Obiettivo: 2 Litri (8 bicchieri)</b></p>
         </div>
         <div id="foodList"></div>
     </div>
 
     <div id="page-premium" class="page">
-        <h2>Smart Kitchen ⭐</h2>
+        <h2>Cucina ⭐</h2>
         <div class="card">
-            <h3>Dispensa</h3>
-            <input type="text" id="ingIn" placeholder="Ingredienti che hai...">
+            <h3>La mia Dispensa</h3>
+            <input type="text" id="ingIn" placeholder="Cosa hai in casa?">
             <button class="btn" onclick="addIngredient()">Aggiungi</button>
             <div id="dispensaList" style="margin-top:10px;"></div>
         </div>
-        <button class="btn" style="background:var(--premium); color:black;" onclick="suggestRecipes()">✨ Genera Ricette AI</button>
+        <button class="btn" style="background:var(--premium); color:black;" onclick="suggestRecipes()">✨ Suggerisci Ricette Reali</button>
         <div id="recipesResults"></div>
+        <h3 style="margin-top:20px;">Ricettario Salvato</h3>
+        <div id="ricettarioList"></div>
     </div>
 
     <div id="page-scan" class="page">
         <h2>Scanner AI</h2>
         <div class="card">
-            <div style="background:#000; height:300px; border-radius:15px; overflow:hidden;">
+            <div style="background:#000; height:320px; border-radius:15px; overflow:hidden;">
                 <video id="video" style="width:100%; height:100%; object-fit:cover;" autoplay playsinline></video>
             </div>
-            <button class="btn" style="margin-top:15px;" onclick="startCamera()">Avvia Camera</button>
-            <button class="btn" style="background:var(--accent); margin-top:10px;" onclick="simulateBarcodeScan()">Scansione Prodotto</button>
+            <button class="btn" style="margin-top:15px;" onclick="startCamera()">Accendi Camera</button>
+            <button class="btn" style="background:var(--accent); margin-top:10px;" onclick="simulateBarcodeScan()">Scansione Rapida</button>
         </div>
     </div>
 
     <div id="page-profile" class="page">
-        <h2>Profilo & Backup</h2>
+        <h2>Profilo Utente</h2>
         <div class="card">
-            <button class="btn" onclick="exportData()">📥 Esporta Backup</button>
-            <button class="btn" style="background:var(--accent)" onclick="generatePDF()">📄 Scarica Report</button>
+            <label>Peso (kg)</label><input type="number" id="p-weight" placeholder="Es: 70">
+            <label>Altezza (cm)</label><input type="number" id="p-height" placeholder="Es: 175">
+            <label>Età</label><input type="number" id="p-age" placeholder="Es: 30">
+            <label>Sesso</label>
+            <select id="p-sex"><option value="M">Uomo</option><option value="F">Donna</option></select>
+            <button class="btn" onclick="saveProfile()">Salva Dati Profilo</button>
         </div>
         <div class="card">
-            <label>Peso (kg)</label><input type="number" id="p-weight">
-            <label>Altezza (cm)</label><input type="number" id="p-height">
-            <button class="btn" onclick="saveProfile()">Salva Dati</button>
+            <h3>Trend Peso</h3>
+            <div style="height:150px;"><canvas id="chartWeight"></canvas></div>
+        </div>
+        <div class="card">
+            <button class="btn" style="background:var(--accent)" onclick="exportData()">📥 Esporta Backup Cloud</button>
         </div>
     </div>
 
@@ -110,121 +121,168 @@
         <button class="nav-item" onclick="switchPage('profile', this)">👤<br>Profilo</button>
     </nav>
 
-    <script>
-        let db = JSON.parse(localStorage.getItem('bio_v13_db')) || [];
-        let prof = JSON.parse(localStorage.getItem('bio_v13_prof')) || { target: 2000, w: 70, h: 170 };
-        let water = JSON.parse(localStorage.getItem('bio_v13_water')) || {};
-        let fast = JSON.parse(localStorage.getItem('bio_v13_fast')) || { active: false, start: null };
-        let dispensa = JSON.parse(localStorage.getItem('bio_v13_ing')) || [];
-        let chartM = null, videoStream = null;
+<script>
+    let db = JSON.parse(localStorage.getItem('bio_v14_db')) || [];
+    let prof = JSON.parse(localStorage.getItem('bio_v14_prof')) || { w:70, h:175, a:30, s:'M' };
+    let weights = JSON.parse(localStorage.getItem('bio_v14_w')) || [];
+    let water = JSON.parse(localStorage.getItem('bio_v14_water')) || {};
+    let fast = JSON.parse(localStorage.getItem('bio_v14_fast')) || { active: false, start: null };
+    let dispensa = JSON.parse(localStorage.getItem('bio_v14_ing')) || [];
+    let ricettario = JSON.parse(localStorage.getItem('bio_v14_ric')) || [];
+    let chartM = null, chartW = null, videoStream = null;
 
-        function switchPage(id, btn) {
-            document.querySelectorAll('.page').forEach(p => p.classList.remove('active-page'));
-            document.getElementById('page-'+id).classList.add('active-page');
-            document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
-            btn.classList.add('active');
-            if(id === 'scan') startCamera(); else stopCamera();
-            renderApp();
+    const databaseRicette = [
+        { n: "Pasta al Pomodoro", c: 450, i: ["pasta", "pomodoro"], link: "https://ricette.giallozafferano.it/Pasta-al-pomodoro.html" },
+        { n: "Omelette Proteica", c: 210, i: ["uova", "formaggio"], link: "https://ricette.giallozafferano.it/Omelette.html" },
+        { n: "Pollo e Zucchine", c: 320, i: ["pollo", "zucchine"], link: "https://ricette.giallozafferano.it/Insalata-di-pollo.html" }
+    ];
+
+    function switchPage(id, btn) {
+        document.querySelectorAll('.page').forEach(p => p.classList.remove('active-page'));
+        document.getElementById('page-'+id).classList.add('active-page');
+        document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+        btn.classList.add('active');
+        document.getElementById('fabBtn').style.display = (id === 'diario') ? 'flex' : 'none';
+        if(id === 'premium') renderRicettario();
+        if(id === 'profile') renderWeightChart();
+        renderApp();
+    }
+
+    function toggleModal() {
+        const m = document.getElementById('addModal');
+        const isOpen = m.style.display === 'flex';
+        if(!isOpen) {
+            document.getElementById('nameIn').value = "";
+            document.getElementById('calIn').value = "";
+            document.getElementById('suggBox').style.display = 'none';
+            renderRecentFoods();
         }
+        m.style.display = isOpen ? 'none' : 'flex';
+    }
 
-        async function startCamera() {
-            try {
-                videoStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } });
-                document.getElementById('video').srcObject = videoStream;
-            } catch(e) { alert("Attiva permessi fotocamera"); }
+    function renderRecentFoods() {
+        const box = document.getElementById('recentFoods');
+        const unique = [...new Set(db.map(p => p.nome))].slice(-3);
+        box.innerHTML = unique.length ? "<small>Recenti:</small><br>" : "";
+        unique.forEach(f => {
+            const span = document.createElement('span');
+            span.className = 'ingredient-tag';
+            span.innerText = f;
+            span.onclick = () => { document.getElementById('nameIn').value = f; searchFood(); };
+            box.appendChild(span);
+        });
+    }
+
+    async function searchFood() {
+        const q = document.getElementById('nameIn').value;
+        if(q.length < 3) return;
+        const res = await fetch(`https://it.openfoodfacts.org/cgi/search.pl?search_terms=${q}&json=1&page_size=5`);
+        const data = await res.json();
+        const box = document.getElementById('suggBox');
+        box.innerHTML = "";
+        data.products.forEach(p => {
+            const kcal = Math.round(p.nutriments['energy-kcal_100g'] || 0);
+            const d = document.createElement('div'); d.className = 'sugg-item';
+            d.innerHTML = `<b>${p.product_name}</b> (${kcal} kcal)`;
+            d.onclick = () => { document.getElementById('nameIn').value = p.product_name; document.getElementById('calIn').value = kcal; box.style.display = 'none'; };
+            box.appendChild(d);
+        });
+        box.style.display = 'block';
+    }
+
+    function salvaPasto() {
+        const n = document.getElementById('nameIn').value, c = parseInt(document.getElementById('calIn').value);
+        if(n && c) {
+            db.push({ id: Date.now(), nome: n, cal: c, cat: document.getElementById('catIn').value, data: document.getElementById('dateSelector').value });
+            localStorage.setItem('bio_v14_db', JSON.stringify(db));
+            toggleModal(); renderApp();
         }
-        function stopCamera() { if(videoStream) videoStream.getTracks().forEach(t => t.stop()); }
+    }
 
-        function toggleModal() {
-            const m = document.getElementById('addModal');
-            m.style.display = (m.style.display === 'flex') ? 'none' : 'flex';
+    function eliminaPasto(id) {
+        db = db.filter(p => p.id !== id);
+        localStorage.setItem('bio_v14_db', JSON.stringify(db));
+        renderApp();
+    }
+
+    function renderApp() {
+        const date = document.getElementById('dateSelector').value || new Date().toISOString().split('T')[0];
+        const oggi = db.filter(p => p.data === date);
+        let tot = 0, s = {Colazione:0, Pranzo:0, Cena:0, Snack:0};
+        document.getElementById('foodList').innerHTML = oggi.map(p => {
+            tot += p.cal; s[p.cat] += p.cal;
+            return `<div class="card" style="display:flex; justify-content:space-between; align-items:center;">
+                <span><b>${p.nome}</b> (${p.cal} kcal)</span>
+                <button class="delete-btn" onclick="eliminaPasto(${p.id})">✕</button>
+            </div>`;
+        }).join('');
+        const ctx = document.getElementById('chartMain').getContext('2d');
+        if(chartM) chartM.destroy();
+        chartM = new Chart(ctx, { type: 'doughnut', data: { labels: Object.keys(s), datasets: [{ data: Object.values(s), backgroundColor: ['#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0'] }] }, options: { maintainAspectRatio: false }});
+        renderWater(); updateTimer();
+    }
+
+    function renderWater() {
+        const date = document.getElementById('dateSelector').value;
+        const count = water[date] || 0;
+        let h = "";
+        for(let i=1; i<=8; i++) h += `<span class="water-glass ${i<=count?'filled':''}" onclick="setWater(${i})">💧</span>`;
+        document.getElementById('waterBox').innerHTML = h;
+    }
+    function setWater(n) { water[document.getElementById('dateSelector').value] = n; localStorage.setItem('bio_v14_water', JSON.stringify(water)); renderWater(); }
+
+    function toggleFast() {
+        fast.active = !fast.active;
+        fast.start = fast.active ? Date.now() : null;
+        localStorage.setItem('bio_v14_fast', JSON.stringify(fast));
+        updateTimer();
+    }
+    function updateTimer() {
+        const status = document.getElementById('timerStatus');
+        if(fast.active && fast.start) {
+            const diff = Date.now() - fast.start;
+            const h = Math.floor(diff/3600000), m = Math.floor((diff%3600000)/60000), s = Math.floor((diff%60000)/1000);
+            status.innerText = `${h.toString().padStart(2,'0')}:${m.toString().padStart(2,'0')}:${s.toString().padStart(2,'0')}`;
+            document.getElementById('fastBtn').innerText = "Termina Digiuno";
+        } else {
+            status.innerText = "00:00:00";
+            document.getElementById('fastBtn').innerText = "Inizia Digiuno";
         }
+    }
 
-        function salvaPasto() {
-            const n = document.getElementById('nameIn').value, c = parseInt(document.getElementById('calIn').value);
-            if(n && c) {
-                db.push({ id: Date.now(), nome: n, cal: c, cat: document.getElementById('catIn').value, data: document.getElementById('dateSelector').value });
-                localStorage.setItem('bio_v13_db', JSON.stringify(db));
-                toggleModal(); renderApp();
-            }
-        }
+    function suggestRecipes() {
+        const res = document.getElementById('recipesResults');
+        const trovate = databaseRicette.filter(r => r.i.some(ing => dispensa.includes(ing.toLowerCase())));
+        res.innerHTML = trovate.length ? "" : "<p>Aggiungi 'pasta' o 'uova' in dispensa.</p>";
+        trovate.forEach(r => {
+            res.innerHTML += `<div class="card" style="display:flex; justify-content:space-between; align-items:center;">
+                <div><b>${r.n}</b><br><a href="${r.link}" target="_blank" style="font-size:12px; color:var(--accent)">Leggi ricetta</a></div>
+                <button class="btn" style="width:auto; padding:8px 12px;" onclick="saveToBook('${r.n}', ${r.c})">Salva</button>
+            </div>`;
+        });
+    }
+    function saveToBook(n, c) { ricettario.push({id: Date.now(), n, c}); localStorage.setItem('bio_v14_ric', JSON.stringify(ricettario)); renderRicettario(); }
+    function renderRicettario() {
+        document.getElementById('ricettarioList').innerHTML = ricettario.map(r => `<div class="card" style="display:flex; justify-content:space-between"><span>${r.n}</span><button class="delete-btn" onclick="delRicetta(${r.id})">✕</button></div>`).join('');
+    }
+    function delRicetta(id) { ricettario = ricettario.filter(r => r.id !== id); localStorage.setItem('bio_v14_ric', JSON.stringify(ricettario)); renderRicettario(); }
 
-        function eliminaPasto(id) {
-            db = db.filter(p => p.id !== id);
-            localStorage.setItem('bio_v13_db', JSON.stringify(db));
-            renderApp();
-        }
+    function saveProfile() {
+        prof = { w: document.getElementById('p-weight').value, h: document.getElementById('p-height').value, a: document.getElementById('p-age').value, s: document.getElementById('p-sex').value };
+        localStorage.setItem('bio_v14_prof', JSON.stringify(prof));
+        weights.push({ d: new Date().toLocaleDateString('it-IT',{day:'2-digit',month:'2-digit'}), v: prof.w });
+        localStorage.setItem('bio_v14_w', JSON.stringify(weights));
+        renderWeightChart(); alert("Profilo Salvato!");
+    }
+    function renderWeightChart() {
+        const ctx = document.getElementById('chartWeight').getContext('2d');
+        if(chartW) chartW.destroy();
+        chartW = new Chart(ctx, { type: 'line', data: { labels: weights.map(w=>w.d), datasets: [{ data: weights.map(w=>w.v), borderColor: '#8e44ad', tension: 0.3 }] }, options: { maintainAspectRatio: false }});
+    }
 
-        function renderApp() {
-            const date = document.getElementById('dateSelector').value || new Date().toISOString().split('T')[0];
-            const oggi = db.filter(p => p.data === date);
-            let tot = 0, s = {Colazione:0, Pranzo:0, Cena:0, Snack:0};
-            
-            document.getElementById('foodList').innerHTML = oggi.map(p => {
-                tot += p.cal; s[p.cat] += p.cal;
-                return `<div class="card" style="display:flex; justify-content:space-between; align-items:center;">
-                    <span><b>${p.nome}</b> (${p.cal} kcal)</span>
-                    <button class="delete-btn" onclick="eliminaPasto(${p.id})">✕</button>
-                </div>`;
-            }).join('');
-
-            const ctx = document.getElementById('chartMain').getContext('2d');
-            if(chartM) chartM.destroy();
-            chartM = new Chart(ctx, { type: 'doughnut', data: { labels: Object.keys(s), datasets: [{ data: Object.values(s), backgroundColor: ['#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0'] }] }, options: { maintainAspectRatio: false }});
-            
-            renderWater();
-        }
-
-        function renderWater() {
-            const date = document.getElementById('dateSelector').value;
-            const count = water[date] || 0;
-            let h = "";
-            for(let i=1; i<=8; i++) h += `<span class="water-glass ${i<=count?'filled':''}" onclick="setWater(${i})">💧</span>`;
-            document.getElementById('waterBox').innerHTML = h;
-        }
-
-        function setWater(n) {
-            water[document.getElementById('dateSelector').value] = n;
-            localStorage.setItem('bio_v13_water', JSON.stringify(water));
-            renderWater();
-        }
-
-        function toggleFast() {
-            fast.active = !fast.active;
-            fast.start = fast.active ? Date.now() : null;
-            localStorage.setItem('bio_v13_fast', JSON.stringify(fast));
-            updateTimer();
-        }
-
-        function updateTimer() {
-            if(fast.active) {
-                const d = Date.now() - fast.start;
-                const h = Math.floor(d/3600000), m = Math.floor((d%3600000)/60000), s = Math.floor((d%60000)/1000);
-                document.getElementById('timerStatus').innerText = `${h.toString().padStart(2,'0')}:${m.toString().padStart(2,'0')}:${s.toString().padStart(2,'0')}`;
-                document.getElementById('fastBtn').innerText = "Termina Digiuno";
-            } else {
-                document.getElementById('timerStatus').innerText = "00:00:00";
-                document.getElementById('fastBtn').innerText = "Inizia Digiuno";
-            }
-        }
-
-        function addIngredient() {
-            const i = document.getElementById('ingIn').value;
-            if(i) { dispensa.push(i); localStorage.setItem('bio_v13_ing', JSON.stringify(dispensa)); document.getElementById('ingIn').value=""; renderDispensa(); }
-        }
-        function renderDispensa() { document.getElementById('dispensaList').innerHTML = dispensa.map((ing, i) => `<span class="ingredient-tag" onclick="removeIng(${i})">${ing}</span>`).join(''); }
-        function removeIng(i) { dispensa.splice(i, 1); localStorage.setItem('bio_v13_ing', JSON.stringify(dispensa)); renderDispensa(); }
-
-        function saveProfile() {
-            prof.w = document.getElementById('p-weight').value;
-            prof.h = document.getElementById('p-height').value;
-            localStorage.setItem('bio_v13_prof', JSON.stringify(prof));
-            alert("Salvato!");
-        }
-
-        document.getElementById('dateSelector').valueAsDate = new Date();
-        setInterval(updateTimer, 1000);
-        renderApp(); renderDispensa();
-    </script>
+    document.getElementById('dateSelector').valueAsDate = new Date();
+    setInterval(updateTimer, 1000);
+    renderApp(); renderRicettario();
+</script>
 </body>
 </html>
