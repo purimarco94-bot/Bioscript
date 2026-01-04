@@ -3,7 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>BioDiary Ultimate v11</title>
+    <title>BioDiary Ultimate v12</title>
+    <link rel="manifest" href="manifest.json">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         :root { --primary: #27ae60; --accent: #8e44ad; --water: #3498db; --fasting: #f39c12; --bg: #f4f7f6; --white: #ffffff; --danger: #e74c3c; }
@@ -11,47 +12,79 @@
         .page { display: none; padding: 20px 15px 100px 15px; min-height: 100vh; box-sizing: border-box; }
         .active-page { display: block; }
         .card { background: var(--white); border-radius: 20px; padding: 18px; margin-bottom: 15px; box-shadow: 0 4px 12px rgba(0,0,0,0.06); }
-        
-        /* Fasting Timer UI */
-        .timer-display { font-size: 32px; font-weight: bold; text-align: center; color: var(--fasting); margin: 10px 0; }
-        
-        .fab { position: fixed; bottom: 90px; right: 20px; width: 60px; height: 60px; background: var(--primary); color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 30px; box-shadow: 0 4px 10px rgba(0,0,0,0.2); z-index: 999; border: none; }
         .btn { background: var(--primary); color: white; border: none; padding: 15px; border-radius: 12px; width: 100%; font-weight: bold; cursor: pointer; margin-top: 5px; }
         .btn-outline { background: transparent; color: var(--primary); border: 2px solid var(--primary); }
+        .delete-btn { color: var(--danger); border: none; background: none; font-size: 18px; cursor: pointer; font-weight: bold; }
+        input, select { width: 100%; padding: 12px; margin: 8px 0; border: 1px solid #eee; border-radius: 10px; box-sizing: border-box; }
+        
+        .timer-display { font-size: 28px; font-weight: bold; text-align: center; color: var(--fasting); margin: 10px 0; }
+        .mood-tag { display: inline-block; padding: 5px 10px; border-radius: 10px; background: #eee; font-size: 12px; margin-top: 5px; }
         
         .bottom-nav { position: fixed; bottom: 0; width: 100%; height: 75px; background: white; display: flex; justify-content: space-around; align-items: center; border-top: 1px solid #eee; z-index: 1000; }
-        .nav-item { border: none; background: none; color: #888; font-size: 11px; display: flex; flex-direction: column; align-items: center; }
+        .nav-item { border: none; background: none; color: #888; font-size: 11px; display: flex; flex-direction: column; align-items: center; cursor: pointer; }
         .nav-item.active { color: var(--primary); font-weight: bold; }
+        .fab { position: fixed; bottom: 90px; right: 20px; width: 60px; height: 60px; background: var(--primary); color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 30px; box-shadow: 0 4px 10px rgba(0,0,0,0.2); z-index: 999; border: none; }
         
-        input, select { width: 100%; padding: 12px; margin: 8px 0; border: 1px solid #eee; border-radius: 10px; box-sizing: border-box; }
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 2000; align-items: center; justify-content: center; }
+        .modal-content { background: white; width: 90%; border-radius: 20px; padding: 20px; max-height: 90vh; overflow-y: auto; }
     </style>
 </head>
 <body>
 
+    <div id="addModal" class="modal">
+        <div class="modal-content">
+            <h3>Registra Pasto</h3>
+            <input type="text" id="nameIn" placeholder="Nome cibo (es. Pollo e Riso)">
+            <input type="number" id="calIn" placeholder="Calorie totali">
+            <label>Com'è il tuo Mood? (Mindful Eating)</label>
+            <select id="moodIn">
+                <option value="😊 Energico">😊 Energico</option>
+                <option value="😴 Sonnolento">😴 Sonnolento</option>
+                <option value="🤢 Gonfio">🤢 Gonfio</option>
+                <option value="🍕 Affamato">🍕 Molto Affamato</option>
+                <option value="🧘 Soddisfatto">🧘 Soddisfatto</option>
+            </select>
+            <label>Tipo di Pasto</label>
+            <select id="catIn">
+                <option value="Colazione">Colazione</option>
+                <option value="Pranzo">Pranzo</option>
+                <option value="Cena">Cena</option>
+                <option value="Snack">Snack</option>
+            </select>
+            <button class="btn" onclick="salvaPasto()">Salva</button>
+            <button onclick="toggleModal()" style="background:none; border:none; color:red; width:100%; margin-top:10px;">Annulla</button>
+        </div>
+    </div>
+
+    <button class="fab" onclick="toggleModal()">+</button>
+
     <div id="page-diario" class="page active-page">
-        <h2>Report & Digiuno</h2>
+        <h2>Report Salute</h2>
         
         <div class="card">
-            <h3>⏳ Timer Digiuno</h3>
+            <h3>⏳ Digiuno Intermittente</h3>
             <div id="timerStatus" class="timer-display">00:00:00</div>
             <button id="fastBtn" class="btn" style="background:var(--fasting)" onclick="toggleFast()">Inizia Digiuno</button>
         </div>
 
         <div class="card">
             <input type="date" id="dateSelector" onchange="renderApp()">
-            <div style="height: 180px;"><canvas id="chartMain"></canvas></div>
+            <canvas id="chartMain" style="max-height: 150px;"></canvas>
+            <h4 style="margin: 15px 0 5px 0;">Analisi Macro (g)</h4>
+            <canvas id="chartMacro" style="max-height: 120px;"></canvas>
         </div>
-        
+
         <div id="foodList"></div>
     </div>
 
     <div id="page-premium" class="page">
-        <h2>Cucina ⭐</h2>
+        <h2>Smart Kitchen ⭐</h2>
         <div class="card">
-            <input type="text" id="ingIn" placeholder="Aggiungi ingrediente...">
+            <input type="text" id="ingIn" placeholder="Cosa hai in dispensa?">
             <button class="btn" onclick="addIngredient()">Aggiungi</button>
             <div id="dispensaList" style="margin-top:10px;"></div>
         </div>
+        <button class="btn" style="background:var(--accent)" onclick="suggestRecipes()">Trova Ricette</button>
         <div id="recipesResults"></div>
     </div>
 
@@ -59,22 +92,22 @@
         <h2>Scanner AI</h2>
         <div class="card">
             <video id="video" style="width:100%; border-radius:15px; background:#000;" autoplay playsinline></video>
-            <button class="btn" onclick="simulateBarcodeScan()">Scansiona Prodotto</button>
+            <button class="btn" onclick="simulateBarcodeScan()">Scansiona Codice a Barre</button>
         </div>
     </div>
 
     <div id="page-profile" class="page">
-        <h2>Profilo & Dati</h2>
+        <h2>Gestione Dati</h2>
         <div class="card">
-            <button class="btn" onclick="exportData()">📥 Esporta Backup (Cloud/JSON)</button>
+            <button class="btn" onclick="exportData()">📥 Esporta Backup JSON</button>
             <button class="btn btn-outline" onclick="document.getElementById('importFile').click()">📤 Carica Backup</button>
             <input type="file" id="importFile" style="display:none" onchange="importData(event)">
-            <button class="btn" style="background:var(--accent)" onclick="generatePDF()">📄 Genera Report Testuale (PDF)</button>
+            <button class="btn" style="background:var(--accent)" onclick="generatePDF()">📄 Scarica Report (TXT/PDF)</button>
         </div>
         <div class="card">
-            <label>Peso (kg)</label>
+            <label>Peso Attuale (kg)</label>
             <input type="number" id="p-weight">
-            <button class="btn" onclick="saveProfile()">Aggiorna</button>
+            <button class="btn" onclick="saveProfile()">Salva Peso</button>
         </div>
     </div>
 
@@ -85,125 +118,146 @@
         <button class="nav-item" onclick="switchPage('profile', this)">👤<br>Profilo</button>
     </nav>
 
-<script>
-    let db = JSON.parse(localStorage.getItem('bio_v11_db')) || [];
-    let fastData = JSON.parse(localStorage.getItem('bio_v11_fast')) || { active: false, start: null };
-    let timerInterval;
+    <script>
+        let db = JSON.parse(localStorage.getItem('bio_v12_db')) || [];
+        let fastData = JSON.parse(localStorage.getItem('bio_v12_fast')) || { active: false, start: null };
+        let dispensa = JSON.parse(localStorage.getItem('bio_v12_ing')) || [];
+        let timerInterval, chartM, chartMacro;
 
-    // --- FASTING TIMER ---
-    function toggleFast() {
-        if (!fastData.active) {
-            fastData.active = true;
-            fastData.start = Date.now();
-            document.getElementById('fastBtn').innerText = "Termina Digiuno";
-        } else {
-            fastData.active = false;
-            fastData.start = null;
-            document.getElementById('fastBtn').innerText = "Inizia Digiuno";
+        // --- CORE NAV ---
+        function switchPage(id, btn) {
+            document.querySelectorAll('.page').forEach(p => p.classList.remove('active-page'));
+            document.getElementById('page-'+id).classList.add('active-page');
+            document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+            btn.classList.add('active');
+            renderApp();
         }
-        localStorage.setItem('bio_v11_fast', JSON.stringify(fastData));
-        updateTimer();
-    }
 
-    function updateTimer() {
-        if (fastData.active) {
-            const diff = Date.now() - fastData.start;
-            const h = Math.floor(diff / 3600000);
-            const m = Math.floor((diff % 3600000) / 60000);
-            const s = Math.floor((diff % 60000) / 1000);
-            document.getElementById('timerStatus').innerText = 
-                `${h.toString().padStart(2,'0')}:${m.toString().padStart(2,'0')}:${s.toString().padStart(2,'0')}`;
-        } else {
-            document.getElementById('timerStatus').innerText = "00:00:00";
+        function toggleModal() {
+            const m = document.getElementById('addModal');
+            m.style.display = (m.style.display === 'flex') ? 'none' : 'flex';
         }
-    }
 
-    // --- BACKUP CLOUD & EXPORT ---
-    function exportData() {
-        const data = { db: db, prof: localStorage.getItem('bio_v11_prof'), weights: localStorage.getItem('bio_v11_w') };
-        const blob = new Blob([JSON.stringify(data)], { type: 'application/json' });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `BioDiary_Backup_${new Date().toISOString().split('T')[0]}.json`;
-        a.click();
-    }
+        // --- REGISTRAZIONE ---
+        function salvaPasto() {
+            const nome = document.getElementById('nameIn').value;
+            const cal = parseInt(document.getElementById('calIn').value) || 0;
+            const mood = document.getElementById('moodIn').value;
+            const cat = document.getElementById('catIn').value;
+            const data = document.getElementById('dateSelector').value;
 
-    function importData(event) {
-        const file = event.target.files[0];
-        const reader = new FileReader();
-        reader.onload = (e) => {
-            const imported = JSON.parse(e.target.result);
-            db = imported.db;
-            localStorage.setItem('bio_v11_db', JSON.stringify(db));
-            alert("Dati importati con successo!");
-            location.reload();
-        };
-        reader.readAsText(file);
-    }
+            if(!nome) return alert("Inserisci un nome!");
 
-    function generatePDF() {
-        let text = "REPORT BIODIARY\n\n";
-        db.forEach(p => text += `${p.data} - ${p.nome}: ${p.cal} kcal\n`);
-        const blob = new Blob([text], { type: 'text/plain' });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = "Report_Salute.txt";
-        a.click();
-    }
+            db.push({ id: Date.now(), nome, cal, mood, cat, data });
+            localStorage.setItem('bio_v12_db', JSON.stringify(db));
+            toggleModal();
+            renderApp();
+        }
 
-    // --- CORE ---
-    function switchPage(id, btn) {
-        document.querySelectorAll('.page').forEach(p => p.classList.remove('active-page'));
-        document.getElementById('page-'+id).classList.add('active-page');
-        document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
-        btn.classList.add('active');
-        if(id === 'diario') renderApp();
-    }
+        function eliminaPasto(id) {
+            db = db.filter(p => p.id !== id);
+            localStorage.setItem('bio_v12_db', JSON.stringify(db));
+            renderApp();
+        }
 
-    function renderApp() {
-        updateTimer();
-        if(!timerInterval) timerInterval = setInterval(updateTimer, 1000);
-        // ... (Logica renderApp precedente per Grafico e Lista Cibi)
-    }
+        // --- RENDERING & GRAFICI ---
+        function renderApp() {
+            const date = document.getElementById('dateSelector').value;
+            const oggi = db.filter(p => p.data === date);
+            const list = document.getElementById('foodList');
+            let totCal = 0, macros = { carb: 0, prot: 0, fat: 0 }, catData = { Colazione:0, Pranzo:0, Cena:0, Snack:0 };
 
-    document.getElementById('dateSelector').valueAsDate = new Date();
-    if(fastData.active) document.getElementById('fastBtn').innerText = "Termina Digiuno";
-    renderApp();
-</script// --- FUNZIONE ESPORTA PDF (TESTUALE) ---
-function generatePDF() {
-    let report = "BIODIARY ULTIMATE REPORT\n";
-    report += "Generato il: " + new Date().toLocaleString() + "\n";
-    report += "------------------------------------------\n\n";
-    
-    db.forEach(p => {
-        report += `[${p.data}] ${p.cat}: ${p.nome} - ${p.cal} kcal\n`;
-    });
-    
-    const blob = new Blob([report], { type: 'text/plain' });
-    const link = document.createElement('a');
-    link.href = URL.createObjectURL(blob);
-    link.download = "BioDiary_Report.txt";
-    link.click();
-}
+            list.innerHTML = oggi.map(p => {
+                totCal += p.cal;
+                catData[p.cat] += p.cal;
+                // Calcolo macro stimato (approssimazione dietetica standard)
+                macros.carb += Math.round(p.cal * 0.5 / 4);
+                macros.prot += Math.round(p.cal * 0.2 / 4);
+                macros.fat += Math.round(p.cal * 0.3 / 9);
 
-// --- BACKUP CLOUD (JSON) ---
-function exportData() {
-    const backup = {
-        pasti: db,
-        profilo: prof,
-        pesi: weights,
-        idratazione: waterData
-    };
-    const blob = new Blob([JSON.stringify(backup)], { type: 'application/json' });
-    const link = document.createElement('a');
-    link.href = URL.createObjectURL(blob);
-    link.download = "BioDiary_Backup.json";
-    link.click();
-}
->
+                return `<div class="card" style="display:flex; justify-content:space-between; align-items:center;">
+                    <div><b>${p.nome}</b> (${p.cal} kcal)<br><span class="mood-tag">${p.mood}</span></div>
+                    <button class="delete-btn" onclick="eliminaPasto(${p.id})">✕</button>
+                </div>`;
+            }).join('');
+
+            updateCharts(catData, macros);
+            updateTimerUI();
+        }
+
+        function updateCharts(catData, macros) {
+            const ctxM = document.getElementById('chartMain').getContext('2d');
+            const ctxP = document.getElementById('chartMacro').getContext('2d');
+
+            if(chartM) chartM.destroy();
+            if(chartMacro) chartMacro.destroy();
+
+            chartM = new Chart(ctxM, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Col', 'Pra', 'Cen', 'Snack'],
+                    datasets: [{ data: Object.values(catData), backgroundColor: ['#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0'] }]
+                },
+                options: { plugins: { legend: { position: 'right' } } }
+            });
+
+            chartMacro = new Chart(ctxP, {
+                type: 'bar',
+                data: {
+                    labels: ['Carb', 'Prot', 'Fat'],
+                    datasets: [{ label: 'Grammi', data: [macros.carb, macros.prot, macros.fat], backgroundColor: ['#3498db', '#e74c3c', '#f1c40f'] }]
+                },
+                options: { indexAxis: 'y', plugins: { legend: { display: false } } }
+            });
+        }
+
+        // --- DIGIUNO ---
+        function toggleFast() {
+            if (!fastData.active) { fastData.active = true; fastData.start = Date.now(); }
+            else { fastData.active = false; fastData.start = null; }
+            localStorage.setItem('bio_v12_fast', JSON.stringify(fastData));
+            updateTimerUI();
+        }
+
+        function updateTimerUI() {
+            const btn = document.getElementById('fastBtn');
+            const status = document.getElementById('timerStatus');
+            if (fastData.active) {
+                btn.innerText = "Termina Digiuno";
+                const diff = Date.now() - fastData.start;
+                const h = Math.floor(diff / 3600000);
+                const m = Math.floor((diff % 3600000) / 60000);
+                const s = Math.floor((diff % 60000) / 1000);
+                status.innerText = `${h.toString().padStart(2,'0')}:${m.toString().padStart(2,'0')}:${s.toString().padStart(2,'0')}`;
+            } else {
+                btn.innerText = "Inizia Digiuno";
+                status.innerText = "00:00:00";
+            }
+        }
+
+        // --- BACKUP & EXPORT ---
+        function exportData() {
+            const blob = new Blob([JSON.stringify({db, fastData, dispensa})], { type: 'application/json' });
+            const a = document.createElement('a');
+            a.href = URL.createObjectURL(blob);
+            a.download = "BioDiary_Backup.json";
+            a.click();
+        }
+
+        function generatePDF() {
+            let text = "REPORT BIODIARY - STORICO PASTI\n\n";
+            db.forEach(p => text += `[${p.data}] ${p.nome}: ${p.cal} kcal | Mood: ${p.mood}\n`);
+            const blob = new Blob([text], { type: 'text/plain' });
+            const a = document.createElement('a');
+            a.href = URL.createObjectURL(blob);
+            a.download = "BioDiary_Report.txt";
+            a.click();
+        }
+
+        // Inizializzazione
+        document.getElementById('dateSelector').valueAsDate = new Date();
+        setInterval(updateTimerUI, 1000);
+        renderApp();
+    </script>
 </body>
 </html>
-
-
