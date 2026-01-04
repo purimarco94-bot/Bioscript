@@ -3,33 +3,31 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>BioDiary Ultimate Pro</title>
+    <title>BioDiary Ultimate Recipe</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
-        :root { --primary: #27ae60; --accent: #8e44ad; --premium: #f1c40f; --bg: #f4f7f6; --white: #ffffff; }
+        :root { --primary: #27ae60; --accent: #8e44ad; --premium: #f1c40f; --bg: #f4f7f6; --white: #ffffff; --danger: #e74c3c; }
         body { font-family: -apple-system, sans-serif; background: var(--bg); margin: 0; padding: 0; color: #2c3e50; }
         .page { display: none; padding: 20px 15px 100px 15px; min-height: 100vh; box-sizing: border-box; }
         .active-page { display: block; }
         .card { background: var(--white); border-radius: 20px; padding: 18px; margin-bottom: 15px; box-shadow: 0 4px 12px rgba(0,0,0,0.06); }
         
-        /* Report Tabs */
         .report-tabs { display: flex; gap: 5px; margin-bottom: 15px; background: #e0e0e0; border-radius: 12px; padding: 4px; }
         .tab-btn { flex: 1; border: none; padding: 10px; border-radius: 10px; font-size: 13px; background: transparent; cursor: pointer; }
         .tab-btn.active { background: white; font-weight: bold; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
 
-        /* UI Elements */
         .fab { position: fixed; bottom: 90px; right: 20px; width: 60px; height: 60px; background: var(--primary); color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 30px; box-shadow: 0 4px 10px rgba(0,0,0,0.2); z-index: 999; border: none; }
         .btn { background: var(--primary); color: white; border: none; padding: 15px; border-radius: 12px; width: 100%; font-weight: bold; cursor: pointer; }
         input, select { width: 100%; padding: 12px; margin: 8px 0; border: 1px solid #eee; border-radius: 10px; font-size: 16px; box-sizing: border-box; }
         
-        /* Modal & Lists */
         .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 2000; align-items: center; justify-content: center; }
         .modal-content { background: white; width: 90%; border-radius: 20px; padding: 20px; max-height: 80vh; overflow-y: auto; }
         .suggestions { background: white; border: 1px solid #eee; border-radius: 10px; max-height: 150px; overflow-y: auto; display: none; margin-bottom: 10px; }
         .sugg-item { padding: 10px; border-bottom: 1px solid #f9f9f9; font-size: 14px; }
         .ingredient-tag { display: inline-block; background: #e8f5e9; color: #2e7d32; padding: 6px 12px; border-radius: 20px; font-size: 12px; margin: 4px; cursor: pointer; }
+        
+        .delete-btn { color: var(--danger); font-weight: bold; padding: 5px 10px; border: none; background: none; font-size: 18px; cursor: pointer; }
 
-        /* Coach Box */
         .coach-box { background: linear-gradient(135deg, #f3e5f5, #e3f2fd); border-radius: 15px; padding: 15px; border-left: 5px solid var(--accent); margin: 15px 0; font-size: 14px; }
 
         .bottom-nav { position: fixed; bottom: 0; width: 100%; height: 75px; background: white; display: flex; justify-content: space-around; align-items: center; border-top: 1px solid #eee; z-index: 1000; }
@@ -43,7 +41,7 @@
         <div class="modal-content">
             <h3>Nuovo Pasto</h3>
             <div id="recentCibi" style="margin-bottom:10px;"></div>
-            <input type="text" id="nameIn" placeholder="Cerca o scrivi..." oninput="searchFood()">
+            <input type="text" id="nameIn" placeholder="Cerca cibo..." oninput="searchFood()">
             <div id="suggBox" class="suggestions"></div>
             <input type="number" id="calIn" placeholder="Calorie (kcal)">
             <select id="catIn">
@@ -60,7 +58,7 @@
     <button class="fab" id="fabBtn" onclick="toggleModal()">+</button>
 
     <div id="page-diario" class="page active-page">
-        <h2>Report</h2>
+        <h2>Diario Alimentare</h2>
         <div class="report-tabs">
             <button class="tab-btn active" onclick="setMode('day', this)">Giorno</button>
             <button class="tab-btn" onclick="setMode('week', this)">Settimana</button>
@@ -82,13 +80,13 @@
         <h2>Smart Kitchen ⭐</h2>
         <div class="card">
             <h3>Dispensa</h3>
-            <input type="text" id="ingIn" placeholder="Cosa hai in casa?">
-            <button class="btn" onclick="addIngredient()">Aggiungi</button>
+            <input type="text" id="ingIn" placeholder="Aggiungi ingrediente...">
+            <button class="btn" onclick="addIngredient()">Inserisci</button>
             <div id="dispensaList" style="margin-top:10px;"></div>
         </div>
-        <button class="btn" style="background:var(--premium); color:black;" onclick="suggestRecipes()">Trova Ricette AI</button>
+        <button class="btn" style="background:var(--premium); color:black;" onclick="suggestRecipes()">✨ Genera Ricette Reali</button>
         <div id="recipesResults"></div>
-        <h3 style="margin-top:20px;">I miei piatti</h3>
+        <h3 style="margin-top:20px;">Il mio Ricettario</h3>
         <div id="ricettarioList"></div>
     </div>
 
@@ -120,12 +118,21 @@
     </nav>
 
 <script>
-    let db = JSON.parse(localStorage.getItem('bio_v7_db')) || [];
-    let prof = JSON.parse(localStorage.getItem('bio_v7_prof')) || { target: 2000 };
-    let weights = JSON.parse(localStorage.getItem('bio_v7_w')) || [];
-    let dispensa = JSON.parse(localStorage.getItem('bio_v7_ing')) || [];
-    let ricettario = JSON.parse(localStorage.getItem('bio_v7_ric')) || [];
+    let db = JSON.parse(localStorage.getItem('bio_v8_db')) || [];
+    let prof = JSON.parse(localStorage.getItem('bio_v8_prof')) || { target: 2000 };
+    let weights = JSON.parse(localStorage.getItem('bio_v8_w')) || [];
+    let dispensa = JSON.parse(localStorage.getItem('bio_v8_ing')) || [];
+    let ricettario = JSON.parse(localStorage.getItem('bio_v8_ric')) || [];
     let chartM = null, chartW = null, videoStream = null, currentMode = 'day';
+
+    // DATABASE RICETTE REALI (Logica di matching avanzata)
+    const databaseRicette = [
+        { n: "Pasta al Pomodoro e Basilico", c: 450, i: ["pasta", "pomodoro", "basilico"], link: "https://ricette.giallozafferano.it/Pasta-al-pomodoro.html" },
+        { n: "Omelette alle Erbe", c: 210, i: ["uova", "formaggio"], link: "https://ricette.giallozafferano.it/Omelette.html" },
+        { n: "Insalata di Pollo e Zucchine", c: 320, i: ["pollo", "zucchine"], link: "https://ricette.giallozafferano.it/Insalata-di-pollo.html" },
+        { n: "Risotto allo Zafferano", c: 400, i: ["riso", "zafferano", "burro"], link: "https://ricette.giallozafferano.it/Risotto-alla-Milanese.html" },
+        { n: "Salmone al Forno con Patate", c: 550, i: ["salmone", "patate"], link: "https://ricette.giallozafferano.it/Salmone-al-forno.html" }
+    ];
 
     function switchPage(id, btn) {
         document.querySelectorAll('.page').forEach(p => p.classList.remove('active-page'));
@@ -133,8 +140,6 @@
         document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
         btn.classList.add('active');
         document.getElementById('fabBtn').style.display = (id === 'diario') ? 'flex' : 'none';
-        
-        // Pulizia campi
         if(id === 'premium') renderRicettario();
         if(id === 'scan') startCamera(); else stopCamera();
         renderApp();
@@ -151,7 +156,6 @@
         m.style.display = isOpen ? 'none' : 'flex';
     }
 
-    // --- SUGGERIMENTI RECENTI ---
     function renderRecent() {
         const box = document.getElementById('recentCibi');
         const counts = {};
@@ -167,7 +171,6 @@
         });
     }
 
-    // --- DIARIO & COACH ---
     function renderApp() {
         const target = prof.target || 2000;
         document.getElementById('valTarget').innerText = target;
@@ -178,16 +181,21 @@
             const date = document.getElementById('dateSelector').value || new Date().toISOString().split('T')[0];
             const oggi = db.filter(p => p.data === date);
             let tot = 0, s = {Colazione:0, Pranzo:0, Cena:0, Snack:0};
-            document.getElementById('foodList').innerHTML = oggi.map(p => { tot+=p.cal; s[p.cat]+=p.cal; return `<div class="card">${p.nome} - ${p.cal} kcal</div>` }).join('');
+            document.getElementById('foodList').innerHTML = oggi.map((p, idx) => { 
+                tot+=p.cal; s[p.cat]+=p.cal; 
+                return `<div class="card" style="display:flex; justify-content:space-between; align-items:center;">
+                    <div><b>${p.nome}</b><br><small>${p.cal} kcal</small></div>
+                    <button class="delete-btn" onclick="eliminaPasto(${p.id})">✕</button>
+                </div>` 
+            }).join('');
             document.getElementById('valMedia').innerText = tot;
             document.getElementById('labelType').innerText = "Oggi";
             chartM = new Chart(ctx, { type: 'doughnut', data: { labels: Object.keys(s), datasets: [{ data: Object.values(s), backgroundColor: ['#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0'] }] }});
             
-            // COACH DINAMICO
             const coach = document.getElementById('coachText');
             if(tot === 0) coach.innerText = "Registra i pasti per analizzare la tua giornata.";
-            else if(tot > target) coach.innerText = "Hai superato il limite. Opta per una cena proteica e leggera.";
-            else coach.innerText = "Ottimo bilanciamento. Il tuo metabolismo è in fase ideale.";
+            else if(tot > target) coach.innerText = "Attenzione al target! Bilancia con una cena leggera.";
+            else coach.innerText = "Ottimo lavoro, sei in linea con i tuoi obiettivi.";
         } else {
             let labels = [], vals = [];
             let days = currentMode === 'week' ? 7 : 30;
@@ -201,54 +209,75 @@
             document.getElementById('valMedia').innerText = avg;
             document.getElementById('labelType').innerText = "Media";
             chartM = new Chart(ctx, { type: 'line', data: { labels: labels, datasets: [{ data: vals, borderColor: '#27ae60', tension:0.3 }] }});
-            document.getElementById('coachText').innerText = avg > target ? "Trend in eccesso. Riduci i condimenti questa settimana." : "Costanza perfetta. Mantieni questo ritmo!";
+            document.getElementById('coachText').innerText = avg > target ? "Trend settimanale alto. Riduci le porzioni di carboidrati." : "Stai mantenendo una costanza invidiabile!";
         }
         renderWeight();
     }
 
-    // --- RICETTE & RICETTARIO ---
+    function eliminaPasto(id) {
+        db = db.filter(p => p.id !== id);
+        localStorage.setItem('bio_v8_db', JSON.stringify(db));
+        renderApp();
+    }
+
     function addIngredient() {
-        const val = document.getElementById('ingIn').value;
-        if(val) { dispensa.push(val); localStorage.setItem('bio_v7_ing', JSON.stringify(dispensa)); document.getElementById('ingIn').value=""; renderDispensa(); }
+        const val = document.getElementById('ingIn').value.toLowerCase().trim();
+        if(val && !dispensa.includes(val)) { 
+            dispensa.push(val); 
+            localStorage.setItem('bio_v8_ing', JSON.stringify(dispensa)); 
+            document.getElementById('ingIn').value=""; 
+            renderDispensa(); 
+        }
     }
     function renderDispensa() {
         document.getElementById('dispensaList').innerHTML = dispensa.map((ing, i) => `<span class="ingredient-tag" onclick="removeIng(${i})">${ing}</span>`).join('');
     }
-    function removeIng(i) { dispensa.splice(i, 1); localStorage.setItem('bio_v7_ing', JSON.stringify(dispensa)); renderDispensa(); }
+    function removeIng(i) { dispensa.splice(i, 1); localStorage.setItem('bio_v8_ing', JSON.stringify(dispensa)); renderDispensa(); }
 
-    async function suggestRecipes() {
+    function suggestRecipes() {
         const res = document.getElementById('recipesResults');
-        res.innerHTML = "⌛ Ricerca database internazionale...";
-        const ingStr = dispensa.join(',');
-        try {
-            // Simulazione chiamata database reale (Open Food Facts API per ingredienti simili)
-            const r = await fetch(`https://it.openfoodfacts.org/cgi/search.pl?search_terms=${dispensa[0]}&json=1&page_size=3`);
-            const data = await r.json();
-            res.innerHTML = "";
-            data.products.forEach(p => {
-                const cal = p.nutriments['energy-kcal_100g'] || 250;
-                res.innerHTML += `<div class="card" style="display:flex; justify-content:space-between; align-items:center;">
-                    <span><b>${p.product_name}</b><br><small>${cal} kcal</small></span>
-                    <button class="btn" style="width:auto; padding:8px 15px;" onclick="saveToBook('${p.product_name}', ${cal})">Salva</button>
+        if(dispensa.length === 0) { alert("Aggiungi ingredienti!"); return; }
+        res.innerHTML = "⌛ Analisi ingredienti...";
+        
+        setTimeout(() => {
+            const trovate = databaseRicette.filter(r => r.i.some(ing => dispensa.includes(ing)));
+            res.innerHTML = trovate.length ? "" : "<p style='padding:10px;'>Nessun match perfetto. Prova ad aggiungere ingredienti base come Pasta o Uova.</p>";
+            trovate.forEach(r => {
+                res.innerHTML += `<div class="card">
+                    <div style="display:flex; justify-content:space-between; align-items:center;">
+                        <div><b>${r.n}</b><br><small>${r.c} kcal</small></div>
+                        <div style="display:flex; gap:10px;">
+                            <a href="${r.link}" target="_blank" style="text-decoration:none; background:var(--accent); color:white; padding:8px; border-radius:8px; font-size:12px;">Leggi</a>
+                            <button class="btn" style="width:auto; padding:8px 12px; margin:0;" onclick="saveToBook('${r.n}', ${r.c})">+</button>
+                        </div>
+                    </div>
                 </div>`;
             });
-        } catch(e) { res.innerHTML = "Errore connessione database."; }
+        }, 800);
     }
 
     function saveToBook(n, c) {
-        ricettario.push({n, c});
-        localStorage.setItem('bio_v7_ric', JSON.stringify(ricettario));
+        ricettario.push({id: Date.now(), n, c});
+        localStorage.setItem('bio_v8_ric', JSON.stringify(ricettario));
         renderRicettario();
-        alert("Salvato nel Ricettario!");
+        alert("Salvata nel Ricettario!");
     }
 
     function renderRicettario() {
         document.getElementById('ricettarioList').innerHTML = ricettario.map(r => `
-            <div class="card" style="border-left:5px solid var(--premium)"><b>${r.n}</b> - ${r.c} kcal</div>
+            <div class="card" style="display:flex; justify-content:space-between; align-items:center; border-left:5px solid var(--premium)">
+                <b>${r.n}</b> - ${r.c} kcal
+                <button class="delete-btn" onclick="eliminaRicetta(${r.id})">✕</button>
+            </div>
         `).join('');
     }
 
-    // --- FUNZIONI BASE ---
+    function eliminaRicetta(id) {
+        ricettario = ricettario.filter(r => r.id !== id);
+        localStorage.setItem('bio_v8_ric', JSON.stringify(ricettario));
+        renderRicettario();
+    }
+
     async function startCamera() {
         try { videoStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } });
         document.getElementById('video').srcObject = videoStream; } catch(e) {}
@@ -275,7 +304,7 @@
     function salvaPasto() {
         const d = document.getElementById('dateSelector').value;
         db.push({ id: Date.now(), nome: document.getElementById('nameIn').value, cal: parseInt(document.getElementById('calIn').value), cat: document.getElementById('catIn').value, data: d });
-        localStorage.setItem('bio_v7_db', JSON.stringify(db));
+        localStorage.setItem('bio_v8_db', JSON.stringify(db));
         toggleModal(); renderApp();
     }
 
@@ -291,9 +320,9 @@
         const w = parseFloat(document.getElementById('p-weight').value);
         if(w) { 
             prof.target = Math.round(((10*w)+(6.25*180)-(5*30)+5)*1.4);
-            localStorage.setItem('bio_v7_prof', JSON.stringify(prof));
+            localStorage.setItem('bio_v8_prof', JSON.stringify(prof));
             weights.push({d: new Date().toLocaleDateString('it-IT', {day:'2-digit', month:'2-digit'}), v: w});
-            localStorage.setItem('bio_v7_w', JSON.stringify(weights));
+            localStorage.setItem('bio_v8_w', JSON.stringify(weights));
             renderApp(); alert("Profilo aggiornato!");
         }
     }
