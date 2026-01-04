@@ -3,77 +3,109 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>BioDiary Premium</title>
+    <title>BioDiary Premium Fix</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         :root { --primary: #27ae60; --accent: #8e44ad; --premium: #f1c40f; --bg: #f4f7f6; --white: #ffffff; }
-        body { font-family: -apple-system, sans-serif; background: var(--bg); margin: 0; padding: 0; }
+        body { font-family: -apple-system, sans-serif; background: var(--bg); margin: 0; padding: 0; color: #2c3e50; }
         .page { display: none; padding: 20px 15px 100px 15px; min-height: 100vh; box-sizing: border-box; }
-        .active-page { display: block; }
+        .active-page { display: block; animation: fadeIn 0.3s; }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
         .card { background: var(--white); border-radius: 20px; padding: 18px; margin-bottom: 15px; box-shadow: 0 4px 12px rgba(0,0,0,0.06); }
         
-        /* Premium Badge */
-        .badge-premium { background: var(--premium); color: #000; font-size: 10px; font-weight: bold; padding: 2px 6px; border-radius: 5px; margin-left: 5px; }
-
-        /* Bottom Nav (4 voci ora) */
-        .bottom-nav { position: fixed; bottom: 0; width: 100%; height: 75px; background: white; display: flex; justify-content: space-around; align-items: center; border-top: 1px solid #eee; z-index: 1000; }
-        .nav-item { border: none; background: none; color: #888; font-size: 10px; display: flex; flex-direction: column; align-items: center; }
-        .nav-item.active { color: var(--primary); font-weight: bold; }
+        /* Modal */
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 2000; align-items: center; justify-content: center; }
+        .modal-content { background: white; width: 90%; max-width: 400px; border-radius: 20px; padding: 20px; }
 
         /* UI Elements */
-        .fab { position: fixed; bottom: 90px; right: 20px; width: 56px; height: 56px; background: var(--primary); color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 28px; box-shadow: 0 4px 10px rgba(0,0,0,0.2); z-index: 999; border: none; }
-        .btn { background: var(--primary); color: white; border: none; padding: 14px; border-radius: 12px; width: 100%; font-weight: bold; cursor: pointer; }
-        input, select { width: 100%; padding: 12px; margin: 8px 0; border: 1px solid #eee; border-radius: 10px; font-size: 15px; box-sizing: border-box; }
+        .fab { position: fixed; bottom: 90px; right: 20px; width: 60px; height: 60px; background: var(--primary); color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 30px; box-shadow: 0 4px 10px rgba(0,0,0,0.2); z-index: 999; border: none; }
+        .btn { background: var(--primary); color: white; border: none; padding: 14px; border-radius: 12px; width: 100%; font-weight: bold; cursor: pointer; margin-top: 5px; }
+        input, select { width: 100%; padding: 12px; margin: 8px 0; border: 1px solid #eee; border-radius: 10px; font-size: 16px; box-sizing: border-box; }
         
-        /* Recipe Styles */
-        .recipe-item { border-left: 4px solid var(--premium); padding-left: 10px; margin-bottom: 15px; }
-        .ingredient-tag { display: inline-block; background: #eee; padding: 4px 8px; border-radius: 5px; font-size: 12px; margin: 2px; }
+        /* Suggestions */
+        .suggestions { background: white; border: 1px solid #eee; border-radius: 10px; max-height: 150px; overflow-y: auto; display: none; margin-bottom: 10px; }
+        .sugg-item { padding: 10px; border-bottom: 1px solid #f9f9f9; font-size: 14px; }
+
+        /* Ingredient Tags */
+        .ingredient-tag { display: inline-block; background: #e8f5e9; color: #2e7d32; padding: 6px 12px; border-radius: 20px; font-size: 13px; margin: 4px; border: 1px solid #c8e6c9; cursor: pointer; }
+        .ingredient-tag::after { content: ' ✕'; font-size: 10px; margin-left: 5px; opacity: 0.5; }
+
+        .bottom-nav { position: fixed; bottom: 0; width: 100%; height: 75px; background: white; display: flex; justify-content: space-around; align-items: center; border-top: 1px solid #eee; z-index: 1000; }
+        .nav-item { border: none; background: none; color: #888; font-size: 11px; display: flex; flex-direction: column; align-items: center; }
+        .nav-item.active { color: var(--primary); font-weight: bold; }
     </style>
 </head>
 <body>
 
+    <div id="addModal" class="modal">
+        <div class="modal-content">
+            <h3 style="margin-top:0">Nuovo Pasto</h3>
+            <input type="text" id="nameIn" placeholder="Cerca cibo..." oninput="searchFood()">
+            <div id="suggBox" class="suggestions"></div>
+            <input type="number" id="calIn" placeholder="Calorie (kcal)">
+            <select id="catIn">
+                <option value="Colazione">Colazione</option>
+                <option value="Pranzo">Pranzo</option>
+                <option value="Cena">Cena</option>
+                <option value="Snack">Snack</option>
+            </select>
+            <button class="btn" onclick="salvaPasto()">Aggiungi</button>
+            <button onclick="toggleModal()" style="background:none; border:none; color:red; width:100%; margin-top:10px;">Chiudi</button>
+        </div>
+    </div>
+
     <button class="fab" id="fabBtn" onclick="toggleModal()">+</button>
 
     <div id="page-diario" class="page active-page">
-        <h2>Report <span id="modeTitle">Giorno</span></h2>
+        <h2>Report Giorno</h2>
         <div class="card">
             <input type="date" id="dateSelector" onchange="renderApp()">
+            <div style="display:flex; justify-content:space-around; text-align:center; margin:10px 0;">
+                <div><small>Oggi</small><br><b id="valTot" style="color:var(--primary); font-size:20px;">0</b></div>
+                <div><small>Target</small><br><b id="valTarget" style="font-size:20px;">2000</b></div>
+            </div>
             <div style="height: 180px;"><canvas id="chartMain"></canvas></div>
         </div>
         <div id="foodList"></div>
     </div>
 
     <div id="page-premium" class="page">
-        <h2>Smart Recipes <span class="badge-premium">PREMIUM</span></h2>
+        <h2>Smart Recipes <span style="background:var(--premium); font-size:10px; padding:2px 5px; border-radius:4px;">PREMIUM</span></h2>
         <div class="card">
-            <h3>🛒 La tua Dispensa</h3>
-            <input type="text" id="ingIn" placeholder="Aggiungi ingrediente (es: Uova)">
-            <button class="btn" style="background:var(--accent)" onclick="addIngredient()">Aggiungi Ingredienti</button>
-            <div id="dispensaList" style="margin-top:10px;"></div>
+            <h3>🛒 Dispensa</h3>
+            <input type="text" id="ingIn" placeholder="Esempio: Pasta, Uova...">
+            <button class="btn" style="background:var(--accent)" onclick="addIngredient()">Aggiungi</button>
+            <div id="dispensaList" style="margin-top:15px;"></div>
         </div>
-        <div id="recipeResults">
-            <button class="btn" style="background:var(--premium); color:black;" onclick="suggestRecipes()">✨ Suggerisci Ricette AI</button>
-            <div id="recipesContainer" style="margin-top:20px;"></div>
-        </div>
+        <button class="btn" style="background:var(--premium); color:black;" onclick="suggestRecipes()">✨ Genera Ricette AI</button>
+        <div id="recipesResults" style="margin-top:15px;"></div>
     </div>
 
     <div id="page-scan" class="page">
         <h2>Scanner AI</h2>
-        <div class="card" style="text-align:center;">
-            <div style="background:#000; height:300px; border-radius:15px; display:flex; align-items:center; justify-content:center; color:white;">
-                <video id="video" style="width:100%; height:100%; object-fit:cover;" autoplay playsinline></video>
-            </div>
-            <button class="btn" onclick="startCamera()">Attiva Fotocamera</button>
-            <button class="btn" style="background:var(--accent); margin-top:10px;" onclick="alert('Analisi AI...')">Analizza Piatto</button>
+        <div class="card" style="text-align:center; background:#000; height:350px; border-radius:20px; overflow:hidden;">
+            <video id="video" style="width:100%; height:100%; object-fit:cover;" autoplay playsinline></video>
         </div>
+        <button class="btn" style="background:var(--accent)" onclick="simulateScan()">Scansiona Piatto</button>
     </div>
 
     <div id="page-profile" class="page">
-        <h2>Profilo & Peso</h2>
+        <h2>Il mio Profilo</h2>
         <div class="card">
-            <input type="number" id="p-weight" placeholder="Peso (kg)">
-            <button class="btn" onclick="saveWeight()">Registra Peso</button>
-            <div style="height: 150px; margin-top:15px;"><canvas id="chartWeight"></canvas></div>
+            <label>Peso (kg)</label>
+            <input type="number" id="p-weight">
+            <label>Altezza (cm)</label>
+            <input type="number" id="p-height">
+            <label>Età</label>
+            <input type="number" id="p-age">
+            <label>Sesso</label>
+            <select id="p-sex"><option value="M">Uomo</option><option value="F">Donna</option></select>
+            <button class="btn" onclick="saveProfile()">Salva Dati & Peso</button>
+        </div>
+        <div class="card">
+            <h3 style="margin:0 0 10px 0">Trend Peso</h3>
+            <div style="height: 150px;"><canvas id="chartWeight"></canvas></div>
         </div>
     </div>
 
@@ -84,105 +116,171 @@
         <button class="nav-item" onclick="switchPage('profile', this)">👤<br>Profilo</button>
     </nav>
 
-    <script>
-        let db = JSON.parse(localStorage.getItem('bioElite_V5_db')) || [];
-        let dispensa = JSON.parse(localStorage.getItem('bioElite_V5_dispensa')) || [];
-        let weights = JSON.parse(localStorage.getItem('bioElite_V5_weights')) || [];
-        let chartM = null, chartW = null;
+<script>
+    let db = JSON.parse(localStorage.getItem('bioDiary_db')) || [];
+    let prof = JSON.parse(localStorage.getItem('bioDiary_prof')) || { target: 2000 };
+    let weights = JSON.parse(localStorage.getItem('bioDiary_w')) || [];
+    let dispensa = JSON.parse(localStorage.getItem('bioDiary_ing')) || [];
+    let chartM = null, chartW = null;
 
-        // --- GESTIONE DISPENSA & RICETTE ---
-        function addIngredient() {
-            const ing = document.getElementById('ingIn').value;
-            if(ing) {
-                dispensa.push(ing);
-                localStorage.setItem('bioElite_V5_dispensa', JSON.stringify(dispensa));
-                document.getElementById('ingIn').value = '';
-                renderDispensa();
-            }
-        }
+    // --- DIARIO & MODAL ---
+    function toggleModal() {
+        const m = document.getElementById('addModal');
+        m.style.display = (m.style.display === 'flex') ? 'none' : 'flex';
+    }
 
-        function renderDispensa() {
-            const container = document.getElementById('dispensaList');
-            container.innerHTML = dispensa.map(i => `<span class="ingredient-tag">${i}</span>`).join('');
-        }
-
-        function suggestRecipes() {
-            const container = document.getElementById('recipesContainer');
-            if(dispensa.length === 0) { alert("Aggiungi ingredienti alla dispensa!"); return; }
-            
-            container.innerHTML = "⌛ L'AI sta cucinando per te...";
-            
-            // Simulazione Database Ricette Premium
-            const mockRecipes = [
-                { nome: "Omelette Proteica", kcal: 250, ing: ["Uova", "Formaggio"] },
-                { nome: "Insalata Greca", kcal: 180, ing: ["Pomodoro", "Feta", "Olive"] },
-                { nome: "Pasta al Pomodoro", kcal: 450, ing: ["Pasta", "Pomodoro"] }
-            ];
-
-            // Filtro basato su ingredienti presenti
-            const trovate = mockRecipes.filter(r => r.ing.some(i => dispensa.includes(i)));
-
-            setTimeout(() => {
-                container.innerHTML = trovate.length > 0 ? "" : "Nessuna ricetta esatta, ma ecco un'idea:";
-                const lista = trovate.length > 0 ? trovate : [mockRecipes[0]];
-                
-                lista.forEach(r => {
-                    container.innerHTML += `
-                        <div class="card recipe-item">
-                            <h4>${r.nome}</h4>
-                            <p><b>${r.kcal} kcal</b></p>
-                            <button class="btn" style="padding:8px; font-size:12px;" onclick="addRecipeToDiary('${r.nome}', ${r.kcal})">Aggiungi al Diario</button>
-                        </div>
-                    `;
-                });
-            }, 1000);
-        }
-
-        function addRecipeToDiary(nome, cal) {
-            const date = document.getElementById('dateSelector').value || new Date().toISOString().split('T')[0];
-            db.push({ id: Date.now(), nome: "Ricetta: " + nome, cal: cal, cat: "Pranzo", data: date });
-            localStorage.setItem('bioElite_V5_db', JSON.stringify(db));
-            alert("Ricetta aggiunta al diario!");
-            switchPage('diario', document.querySelectorAll('.nav-item')[0]);
-        }
-
-        // --- CORE FUNCTIONS (Ripristinate) ---
-        function switchPage(id, btn) {
-            document.querySelectorAll('.page').forEach(p => p.classList.remove('active-page'));
-            document.getElementById('page-'+id).classList.add('active-page');
-            document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
-            btn.classList.add('active');
-            document.getElementById('fabBtn').style.display = (id === 'diario') ? 'flex' : 'none';
-            if(id === 'diario') renderApp();
-            if(id === 'premium') renderDispensa();
-        }
-
-        async function startCamera() {
-            const v = document.getElementById('video');
-            try {
-                const s = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } });
-                v.srcObject = s;
-            } catch(e) { alert("Camera Error"); }
-        }
-
-        function renderApp() {
-            const date = document.getElementById('dateSelector').value || new Date().toISOString().split('T')[0];
-            const oggi = db.filter(p => p.data === date);
-            const ctx = document.getElementById('chartMain').getContext('2d');
-            
-            let stats = { Colazione:0, Pranzo:0, Cena:0, Snack:0 };
-            oggi.forEach(p => stats[p.cat] += p.cal);
-
-            if(chartM) chartM.destroy();
-            chartM = new Chart(ctx, {
-                type: 'doughnut',
-                data: { labels: Object.keys(stats), datasets: [{ data: Object.values(stats), backgroundColor: ['#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0'] }] },
-                options: { maintainAspectRatio: false }
+    async function searchFood() {
+        const q = document.getElementById('nameIn').value;
+        const box = document.getElementById('suggBox');
+        if(q.length < 3) { box.style.display='none'; return; }
+        try {
+            const res = await fetch(`https://it.openfoodfacts.org/cgi/search.pl?search_terms=${q}&json=1&page_size=5`);
+            const data = await res.json();
+            box.innerHTML = "";
+            data.products.forEach(p => {
+                const kcal = p.nutriments['energy-kcal_100g'] || 0;
+                const d = document.createElement('div');
+                d.className = 'sugg-item';
+                d.innerHTML = `<b>${p.product_name}</b><br><small>${kcal} kcal/100g</small>`;
+                d.onclick = () => {
+                    document.getElementById('nameIn').value = p.product_name;
+                    document.getElementById('calIn').value = Math.round(kcal);
+                    box.style.display = 'none';
+                };
+                box.appendChild(d);
             });
-        }
+            box.style.display = 'block';
+        } catch(e) {}
+    }
 
-        document.getElementById('dateSelector').valueAsDate = new Date();
-        renderApp();
-    </script>
+    function salvaPasto() {
+        const n = document.getElementById('nameIn').value, c = parseInt(document.getElementById('calIn').value);
+        if(n && c) {
+            db.push({ id: Date.now(), nome: n, cal: c, cat: document.getElementById('catIn').value, data: document.getElementById('dateSelector').value });
+            localStorage.setItem('bioDiary_db', JSON.stringify(db));
+            toggleModal(); renderApp();
+        }
+    }
+
+    // --- DISPENSA & RICETTE ---
+    function addIngredient() {
+        const ing = document.getElementById('ingIn').value;
+        if(ing && !dispensa.includes(ing)) {
+            dispensa.push(ing);
+            localStorage.setItem('bioDiary_ing', JSON.stringify(dispensa));
+            document.getElementById('ingIn').value = ""; renderDispensa();
+        }
+    }
+
+    function removeIngredient(index) {
+        dispensa.splice(index, 1);
+        localStorage.setItem('bioDiary_ing', JSON.stringify(dispensa));
+        renderDispensa();
+    }
+
+    function renderDispensa() {
+        const list = document.getElementById('dispensaList');
+        list.innerHTML = dispensa.map((ing, i) => `<span class="ingredient-tag" onclick="removeIngredient(${i})">${ing}</span>`).join('');
+    }
+
+    function suggestRecipes() {
+        const res = document.getElementById('recipesResults');
+        if(dispensa.length === 0) { alert("Aggiungi ingredienti!"); return; }
+        res.innerHTML = "⌛ AI sta analizzando...";
+        
+        const mocks = [
+            { n: "Pasta Veloce", c: 400, i: ["Pasta"] },
+            { n: "Uova al tegamino", c: 180, i: ["Uova"] },
+            { n: "Insalata Fresca", c: 120, i: ["Pomodoro", "Lattuga"] }
+        ];
+
+        setTimeout(() => {
+            const found = mocks.filter(m => m.i.some(item => dispensa.map(d=>d.toLowerCase()).includes(item.toLowerCase())));
+            res.innerHTML = found.length ? "" : "<p>Nessun match esatto, prova con: <b>Omelette</b> (220 kcal)</p>";
+            found.forEach(r => {
+                res.innerHTML += `<div class="card" style="display:flex; justify-content:space-between; align-items:center;">
+                    <span><b>${r.n}</b><br><small>${r.c} kcal</small></span>
+                    <button class="btn" style="width:auto; padding:8px 15px;" onclick="quickAdd('${r.n}', ${r.c})">+</button>
+                </div>`;
+            });
+        }, 1200);
+    }
+
+    function quickAdd(n, c) {
+        db.push({ id: Date.now(), nome: n, cal: c, cat: "Pranzo", data: new Date().toISOString().split('T')[0] });
+        localStorage.setItem('bioDiary_db', JSON.stringify(db));
+        alert("Aggiunto!"); switchPage('diario', document.querySelectorAll('.nav-item')[0]);
+    }
+
+    // --- PROFILO & RENDER ---
+    function saveProfile() {
+        const w = parseFloat(document.getElementById('p-weight').value);
+        const h = parseFloat(document.getElementById('p-height').value);
+        const a = parseInt(document.getElementById('p-age').value);
+        const s = document.getElementById('p-sex').value;
+        if(w && h && a) {
+            let bmr = (10 * w) + (6.25 * h) - (5 * a) + (s === 'M' ? 5 : -161);
+            prof = { w, h, a, s, target: Math.round(bmr * 1.4) };
+            localStorage.setItem('bioDiary_prof', JSON.stringify(prof));
+            weights.push({ d: new Date().toLocaleDateString('it-IT', {day:'2-digit', month:'2-digit'}), v: w });
+            if(weights.length > 7) weights.shift();
+            localStorage.setItem('bioDiary_w', JSON.stringify(weights));
+            renderApp(); alert("Salvato!");
+        }
+    }
+
+    function renderApp() {
+        const date = document.getElementById('dateSelector').value || new Date().toISOString().split('T')[0];
+        const oggi = db.filter(p => p.data === date);
+        const list = document.getElementById('foodList');
+        let tot = 0, stats = { Colazione:0, Pranzo:0, Cena:0, Snack:0 };
+        list.innerHTML = "";
+        
+        oggi.forEach(p => {
+            tot += p.cal; stats[p.cat] += p.cal;
+            list.innerHTML += `<div class="card" style="display:flex; justify-content:space-between; margin-bottom:8px;">
+                <span><b>${p.nome}</b></span> <b>${p.cal} kcal</b>
+            </div>`;
+        });
+        
+        document.getElementById('valTot').innerText = tot;
+        document.getElementById('valTarget').innerText = prof.target;
+        
+        const ctx = document.getElementById('chartMain').getContext('2d');
+        if(chartM) chartM.destroy();
+        chartM = new Chart(ctx, {
+            type: 'doughnut',
+            data: { labels: Object.keys(stats), datasets: [{ data: Object.values(stats), backgroundColor: ['#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0'] }] },
+            options: { maintainAspectRatio: false }
+        });
+
+        const ctxW = document.getElementById('chartWeight').getContext('2d');
+        if(chartW) chartW.destroy();
+        chartW = new Chart(ctxW, {
+            type: 'line',
+            data: { labels: weights.map(w=>w.d), datasets: [{ label: 'Peso', data: weights.map(w=>w.v), borderColor: '#8e44ad', tension: 0.3 }] },
+            options: { maintainAspectRatio: false }
+        });
+    }
+
+    function switchPage(id, btn) {
+        document.querySelectorAll('.page').forEach(p => p.classList.remove('active-page'));
+        document.getElementById('page-'+id).classList.add('active-page');
+        document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+        btn.classList.add('active');
+        document.getElementById('fabBtn').style.display = (id === 'diario') ? 'flex' : 'none';
+        if(id === 'diario') renderApp();
+        if(id === 'premium') renderDispensa();
+    }
+
+    document.getElementById('dateSelector').valueAsDate = new Date();
+    if(prof.w) {
+        document.getElementById('p-weight').value = prof.w;
+        document.getElementById('p-height').value = prof.h;
+        document.getElementById('p-age').value = prof.a;
+        document.getElementById('p-sex').value = prof.s;
+    }
+    renderApp();
+</script>
 </body>
 </html>
