@@ -3,17 +3,17 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>BioDiary Ultimate v16</title>
+    <title>BioDiary Ultimate v17</title>
     <link rel="manifest" href="manifest.json">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         :root { --primary: #27ae60; --accent: #8e44ad; --water: #3498db; --fasting: #f39c12; --bg: #f4f7f6; --white: #ffffff; --danger: #e74c3c; --premium: #f1c40f; }
-        body { font-family: -apple-system, sans-serif; background: var(--bg); margin: 0; padding: 0; color: #2c3e50; }
+        body { font-family: -apple-system, sans-serif; background: var(--bg); margin: 0; padding: 0; color: #2c3e50; overflow-x: hidden; }
         .page { display: none; padding: 20px 15px 100px 15px; min-height: 100vh; box-sizing: border-box; }
         .active-page { display: block; }
         .card { background: var(--white); border-radius: 20px; padding: 18px; margin-bottom: 15px; box-shadow: 0 4px 12px rgba(0,0,0,0.06); }
-        .btn { background: var(--primary); color: white; border: none; padding: 15px; border-radius: 12px; width: 100%; font-weight: bold; cursor: pointer; margin-top: 5px; }
-        .delete-btn { color: var(--danger); border: none; background: none; font-size: 18px; cursor: pointer; font-weight: bold; }
+        .btn { background: var(--primary); color: white; border: none; padding: 15px; border-radius: 12px; width: 100%; font-weight: bold; cursor: pointer; margin-top: 5px; transition: 0.2s; }
+        .btn:active { transform: scale(0.98); }
         input, select { width: 100%; padding: 12px; margin: 8px 0; border: 1px solid #eee; border-radius: 10px; box-sizing: border-box; font-size: 16px; }
         .report-tabs { display: flex; gap: 5px; margin-bottom: 15px; background: #e0e0e0; border-radius: 12px; padding: 4px; }
         .tab-btn { flex: 1; border: none; padding: 10px; border-radius: 10px; font-size: 13px; background: transparent; cursor: pointer; }
@@ -21,24 +21,21 @@
         .timer-display { font-size: 32px; font-weight: bold; text-align: center; color: var(--fasting); margin: 10px 0; }
         .water-glass { font-size: 24px; cursor: pointer; filter: grayscale(1); transition: 0.3s; margin: 0 3px; }
         .water-glass.filled { filter: grayscale(0); transform: scale(1.1); }
-        .ingredient-tag { display: inline-block; background: #e8f5e9; color: #2e7d32; padding: 6px 12px; border-radius: 20px; font-size: 11px; margin: 3px; cursor: pointer; }
+        .ingredient-tag { display: inline-block; background: #e8f5e9; color: #2e7d32; padding: 6px 12px; border-radius: 20px; font-size: 12px; margin: 3px; border: 1px solid #c8e6c9; }
         .bottom-nav { position: fixed; bottom: 0; width: 100%; height: 75px; background: white; display: flex; justify-content: space-around; align-items: center; border-top: 1px solid #eee; z-index: 1000; }
-        .nav-item { border: none; background: none; color: #888; font-size: 11px; display: flex; flex-direction: column; align-items: center; }
+        .nav-item { border: none; background: none; color: #888; font-size: 11px; display: flex; flex-direction: column; align-items: center; flex:1; }
         .nav-item.active { color: var(--primary); font-weight: bold; }
-        .fab { position: fixed; bottom: 90px; right: 20px; width: 60px; height: 60px; background: var(--primary); color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 30px; box-shadow: 0 4px 10px rgba(0,0,0,0.2); z-index: 999; border: none; }
-        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 2000; align-items: center; justify-content: center; }
-        .modal-content { background: white; width: 90%; border-radius: 20px; padding: 20px; max-height: 85vh; overflow-y: auto; }
-        .recipe-card { border-left: 5px solid var(--premium); margin-bottom: 10px; }
+        .fab { position: fixed; bottom: 90px; right: 20px; width: 60px; height: 60px; background: var(--primary); color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 30px; box-shadow: 0 4px 10px rgba(0,0,0,0.2); z-index: 999; border: none; cursor: pointer; }
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); z-index: 2000; align-items: center; justify-content: center; }
+        .modal-content { background: white; width: 90%; border-radius: 20px; padding: 20px; box-sizing: border-box; }
     </style>
 </head>
 <body>
 
     <div id="addModal" class="modal">
         <div class="modal-content">
-            <h3>Nuovo Pasto</h3>
-            <div id="recentFoods" style="margin-bottom:10px;"></div>
-            <input type="text" id="nameIn" placeholder="Cerca cibo..." oninput="searchFood()">
-            <div id="suggBox" style="background:#fff; border:1px solid #eee; display:none; max-height:100px; overflow:auto;"></div>
+            <h3 style="margin-top:0">Aggiungi Pasto</h3>
+            <input type="text" id="nameIn" placeholder="Nome cibo (es. Mela)">
             <input type="number" id="calIn" placeholder="Calorie (kcal)">
             <select id="catIn">
                 <option value="Colazione">Colazione</option>
@@ -46,44 +43,51 @@
                 <option value="Cena">Cena</option>
                 <option value="Snack">Snack</option>
             </select>
-            <button class="btn" onclick="salvaPasto()">Aggiungi</button>
-            <button onclick="toggleModal()" style="background:none; border:none; color:red; width:100%; margin-top:10px;">Esci</button>
+            <button class="btn" onclick="salvaPasto()">Conferma</button>
+            <button class="btn" style="background:#ccc; color:black; margin-top:10px;" onclick="toggleModal()">Annulla</button>
         </div>
     </div>
 
     <button class="fab" id="fabBtn" onclick="toggleModal()">+</button>
 
     <div id="page-diario" class="page active-page">
-        <h2>Report & Digiuno</h2>
+        <h2>Diario & Report</h2>
         <div class="report-tabs">
-            <button class="tab-btn active" onclick="setReportMode('day', this)">Giorno</button>
-            <button class="tab-btn" onclick="setReportMode('week', this)">Settimana</button>
-            <button class="tab-btn" onclick="setReportMode('month', this)">Mese</button>
+            <button class="tab-btn active" id="btn-day" onclick="changeReport('day')">Giorno</button>
+            <button class="tab-btn" id="btn-week" onclick="changeReport('week')">Settimana</button>
+            <button class="tab-btn" id="btn-month" onclick="changeReport('month')">Mese</button>
         </div>
         <div class="card">
-            <div id="timerStatus" class="timer-display">00:00:00</div>
-            <button id="fastBtn" class="btn" style="background:var(--fasting)" onclick="toggleFast()">Inizia Digiuno</button>
-        </div>
-        <div class="card">
-            <input type="date" id="dateSelector" onchange="renderApp()">
-            <div style="height: 180px;"><canvas id="chartMain"></canvas></div>
+            <h3 id="reportTitle" style="margin:0; font-size:16px; color:var(--primary);">Oggi</h3>
+            <div style="height: 200px;"><canvas id="chartMain"></canvas></div>
         </div>
         <div class="card" style="text-align:center;">
+            <h4>💧 Idratazione</h4>
             <div id="waterBox"></div>
         </div>
         <div id="foodList"></div>
     </div>
 
     <div id="page-premium" class="page">
-        <h2>Cucina Pro ⭐</h2>
+        <h2>La mia Cucina ⭐</h2>
         <div class="card">
-            <h3>La mia Dispensa</h3>
-            <input type="text" id="ingIn" placeholder="Esempio: Pasta, Uova...">
-            <button class="btn" onclick="addIngredient()">Aggiungi alla dispensa</button>
-            <div id="dispensaList" style="margin-top:15px;"></div>
+            <h3>Dispensa</h3>
+            <div style="display:flex; gap:5px;">
+                <input type="text" id="ingIn" placeholder="Aggiungi ingrediente...">
+                <button class="btn" style="width:60px; margin:8px 0;" onclick="addIng()">+</button>
+            </div>
+            <div id="dispensaList" style="margin-top:10px;"></div>
         </div>
-        <button class="btn" style="background:var(--accent)" onclick="suggestRecipes()">✨ Suggerisci Ricette AI</button>
-        <div id="recipesResults" style="margin-top:15px;"></div>
+        <button class="btn" style="background:var(--accent)" onclick="findRecipes()">🔍 Suggerisci Ricette</button>
+        <div id="recipesResults"></div>
+        
+        <div class="card" style="margin-top:20px;">
+            <h3>Nuova Ricetta Personale</h3>
+            <input type="text" id="recTitle" placeholder="Titolo ricetta">
+            <input type="text" id="recLink" placeholder="Link (URL)">
+            <button class="btn" onclick="saveNewRecipe()">Salva nel Ricettario</button>
+        </div>
+        <div id="personalRecipesList"></div>
     </div>
 
     <div id="page-scan" class="page">
@@ -92,166 +96,197 @@
             <div style="background:#000; height:320px; border-radius:15px; overflow:hidden;">
                 <video id="video" style="width:100%; height:100%; object-fit:cover;" autoplay playsinline></video>
             </div>
-            <button class="btn" style="margin-top:15px;" onclick="startCamera()">Accendi Camera</button>
+            <button class="btn" style="margin-top:15px;" onclick="startCam()">Accendi Camera</button>
         </div>
     </div>
 
     <div id="page-profile" class="page">
-        <h2>Profilo Personale</h2>
+        <h2>Il mio Profilo</h2>
         <div class="card">
             <label>Peso (kg)</label><input type="number" id="p-weight">
             <label>Altezza (cm)</label><input type="number" id="p-height">
             <label>Età</label><input type="number" id="p-age">
             <label>Sesso</label>
             <select id="p-sex"><option value="M">Uomo</option><option value="F">Donna</option></select>
-            <button class="btn" onclick="saveProfile()">Salva Profilo</button>
+            <button class="btn" onclick="saveProf()">Salva Modifiche</button>
         </div>
         <div class="card">
-            <h3>Andamento Peso</h3>
+            <h3>Andamento</h3>
             <div style="height:150px;"><canvas id="chartWeight"></canvas></div>
         </div>
     </div>
 
     <nav class="bottom-nav">
-        <button class="nav-item active" onclick="switchPage('diario', this)">📊<br>Diario</button>
-        <button class="nav-item" onclick="switchPage('premium', this)">⭐<br>Cucina</button>
-        <button class="nav-item" onclick="switchPage('scan', this)">📸<br>Scan</button>
-        <button class="nav-item" onclick="switchPage('profile', this)">👤<br>Profilo</button>
+        <button class="nav-item active" onclick="nav('diario', this)">📊<br>Diario</button>
+        <button class="nav-item" onclick="nav('premium', this)">⭐<br>Cucina</button>
+        <button class="nav-item" onclick="nav('scan', this)">📸<br>Scan</button>
+        <button class="nav-item" onclick="nav('profile', this)">👤<br>Profilo</button>
     </nav>
 
 <script>
-    let db = JSON.parse(localStorage.getItem('bio_v16_db')) || [];
-    let prof = JSON.parse(localStorage.getItem('bio_v16_prof')) || { w:70, h:175, a:25, s:'M' };
-    let weights = JSON.parse(localStorage.getItem('bio_v16_w')) || [];
-    let water = JSON.parse(localStorage.getItem('bio_v16_water')) || {};
-    let fast = JSON.parse(localStorage.getItem('bio_v16_fast')) || { active: false, start: null };
-    let dispensa = JSON.parse(localStorage.getItem('bio_v16_ing')) || [];
-    let chartM = null, chartW = null, videoStream = null, currentReportMode = 'day';
+    // Database
+    let meals = JSON.parse(localStorage.getItem('bd_meals')) || [];
+    let user = JSON.parse(localStorage.getItem('bd_user')) || { w:70, h:175, a:25, s:'M' };
+    let weights = JSON.parse(localStorage.getItem('bd_weights')) || [];
+    let waterLog = JSON.parse(localStorage.getItem('bd_water')) || {};
+    let stock = JSON.parse(localStorage.getItem('bd_stock')) || [];
+    let myRecipes = JSON.parse(localStorage.getItem('bd_myrec')) || [];
+    
+    let mainChart, weightChart, stream;
+    let currentMode = 'day';
 
-    const recipesDB = [
-        { n: "Carbonara Light", i: ["pasta", "uova"], l: "https://ricette.giallozafferano.it/Spaghetti-alla-Carbonara.html" },
-        { n: "Omelette alle Erbe", i: ["uova", "formaggio"], l: "https://ricette.giallozafferano.it/Omelette.html" },
-        { n: "Pasta al Pomodoro", i: ["pasta", "pomodoro"], l: "https://ricette.giallozafferano.it/Spaghetti-al-pomodoro.html" }
+    const recipesMaster = [
+        { n: "Pasta al Pomodoro", i: ["pasta", "pomodoro"], l: "https://ricette.giallozafferano.it/Spaghetti-al-pomodoro.html" },
+        { n: "Omelette Classica", i: ["uova", "latte"], l: "https://ricette.giallozafferano.it/Omelette-classica.html" },
+        { n: "Insalata di Tonno", i: ["tonno", "insalata", "pomodoro"], l: "https://ricette.giallozafferano.it/Insalata-di-tonno.html" },
+        { n: "Pollo ai Ferri", i: ["pollo"], l: "https://ricette.giallozafferano.it/Petto-di-pollo-al-limone.html" }
     ];
 
-    function switchPage(id, btn) {
+    // Navigazione
+    function nav(pageId, btn) {
         document.querySelectorAll('.page').forEach(p => p.classList.remove('active-page'));
-        document.getElementById('page-'+id).classList.add('active-page');
+        document.getElementById('page-'+pageId).classList.add('active-page');
         document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
         btn.classList.add('active');
-        document.getElementById('fabBtn').style.display = (id === 'diario') ? 'flex' : 'none';
-        if(id === 'scan') startCamera(); else stopCamera();
-        renderApp();
+        document.getElementById('fabBtn').style.display = (pageId === 'diario') ? 'flex' : 'none';
+        if(pageId === 'scan') startCam(); else stopCam();
+        refresh();
     }
 
-    // --- CUCINA LOGIC ---
-    function addIngredient() {
+    // Diario & Report
+    function toggleModal() {
+        const m = document.getElementById('addModal');
+        m.style.display = (m.style.display === 'flex') ? 'none' : 'flex';
+    }
+
+    function changeReport(mode) {
+        currentMode = mode;
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+        document.getElementById('btn-'+mode).classList.add('active');
+        refresh();
+    }
+
+    function salvaPasto() {
+        const n = document.getElementById('nameIn').value;
+        const c = parseInt(document.getElementById('calIn').value);
+        if(!n || !c) return alert("Inserisci nome e calorie");
+        meals.push({ id: Date.now(), nome: n, cal: c, cat: document.getElementById('catIn').value, d: new Date().toISOString().split('T')[0] });
+        localStorage.setItem('bd_meals', JSON.stringify(meals));
+        toggleModal();
+        refresh();
+    }
+
+    function refresh() {
+        const ctx = document.getElementById('chartMain').getContext('2d');
+        if(mainChart) mainChart.destroy();
+
+        const today = new Date().toISOString().split('T')[0];
+        
+        if(currentMode === 'day') {
+            document.getElementById('reportTitle').innerText = "Riepilogo Oggi";
+            const filtered = meals.filter(m => m.d === today);
+            let cats = { Colazione:0, Pranzo:0, Cena:0, Snack:0 };
+            filtered.forEach(m => cats[m.cat] += m.cal);
+            
+            mainChart = new Chart(ctx, { type: 'doughnut', data: { labels: Object.keys(cats), datasets:[{ data: Object.values(cats), backgroundColor:['#FF6384','#36A2EB','#FFCE56','#4BC0C0'] }] }, options: { maintainAspectRatio: false }});
+            
+            document.getElementById('foodList').innerHTML = filtered.map(m => `
+                <div class="card" style="display:flex; justify-content:space-between; padding:12px;">
+                    <b>${m.nome}</b> <span>${m.cal} kcal</span>
+                </div>
+            `).join('');
+        } else {
+            document.getElementById('reportTitle').innerText = currentMode === 'week' ? "Ultimi 7 Giorni" : "Ultimi 30 Giorni";
+            let days = currentMode === 'week' ? 7 : 30;
+            let labels = [], values = [];
+            for(let i=days-1; i>=0; i--) {
+                let d = new Date(); d.setDate(d.getDate()-i);
+                let dStr = d.toISOString().split('T')[0];
+                labels.push(dStr.split('-')[2]);
+                values.push(meals.filter(m => m.d === dStr).reduce((a,b)=>a+b.cal,0));
+            }
+            mainChart = new Chart(ctx, { type: 'line', data: { labels: labels, datasets:[{ label:'kcal', data: values, borderColor: '#27ae60', tension:0.3, fill:true, backgroundColor:'rgba(39,174,96,0.1)' }] }, options: { maintainAspectRatio: false }});
+            document.getElementById('foodList').innerHTML = "";
+        }
+        renderWater();
+        renderDispensa();
+        renderMyRecipes();
+    }
+
+    // Cucina Logica
+    function addIng() {
         const val = document.getElementById('ingIn').value.toLowerCase().trim();
-        if(val && !dispensa.includes(val)) {
-            dispensa.push(val);
-            localStorage.setItem('bio_v16_ing', JSON.stringify(dispensa));
+        if(val && !stock.includes(val)) {
+            stock.push(val);
+            localStorage.setItem('bd_stock', JSON.stringify(stock));
             document.getElementById('ingIn').value = "";
             renderDispensa();
         }
     }
     function renderDispensa() {
-        document.getElementById('dispensaList').innerHTML = dispensa.map((ing, i) => 
-            `<span class="ingredient-tag" onclick="removeIng(${i})">${ing} ✕</span>`
-        ).join('');
+        document.getElementById('dispensaList').innerHTML = stock.map((ing, i) => `
+            <span class="ingredient-tag" onclick="removeIng(${i})">${ing} ✕</span>
+        `).join('');
     }
-    function removeIng(i) {
-        dispensa.splice(i, 1);
-        localStorage.setItem('bio_v16_ing', JSON.stringify(dispensa));
-        renderDispensa();
-    }
-    function suggestRecipes() {
+    function removeIng(i) { stock.splice(i,1); localStorage.setItem('bd_stock', JSON.stringify(stock)); renderDispensa(); }
+
+    function findRecipes() {
         const res = document.getElementById('recipesResults');
-        const trovate = recipesDB.filter(r => r.i.some(ing => dispensa.includes(ing)));
-        res.innerHTML = trovate.length ? "" : "<p>Nessuna ricetta trovata. Aggiungi ingredienti base (uova, pasta, pomodoro).</p>";
+        const trovate = recipesMaster.filter(r => r.i.some(ing => stock.includes(ing)));
+        res.innerHTML = trovate.length ? "<h4>Ricette suggerite:</h4>" : "<h4>Nessun match. Prova ad aggiungere 'uova' o 'pasta'.</h4>";
         trovate.forEach(r => {
-            res.innerHTML += `<div class="card recipe-card">
-                <b>${r.n}</b><br>
-                <a href="${r.l}" target="_blank" style="color:var(--accent); font-size:14px;">Vedi Ricetta Intera</a>
+            res.innerHTML += `<div class="card" style="border-left:5px solid var(--premium)">
+                <b>${r.n}</b><br><a href="${r.l}" target="_blank" style="color:var(--accent)">Apri Ricetta</a>
             </div>`;
         });
     }
 
-    // --- PROFILO LOGIC ---
-    function saveProfile() {
-        prof = { 
-            w: document.getElementById('p-weight').value, 
-            h: document.getElementById('p-height').value, 
-            a: document.getElementById('p-age').value, 
-            s: document.getElementById('p-sex').value 
-        };
-        localStorage.setItem('bio_v16_prof', JSON.stringify(prof));
-        weights.push({ d: new Date().toLocaleDateString('it-IT',{day:'2-digit',month:'2-digit'}), v: prof.w });
-        if(weights.length > 10) weights.shift();
-        localStorage.setItem('bio_v16_w', JSON.stringify(weights));
-        renderWeightChart();
-        alert("Profilo aggiornato!");
-    }
-
-    // --- CORE (DIARIO, SCAN, TIMER) ---
-    function toggleFast() {
-        fast.active = !fast.active;
-        fast.start = fast.active ? Date.now() : null;
-        localStorage.setItem('bio_v16_fast', JSON.stringify(fast));
-        updateTimer();
-    }
-    function updateTimer() {
-        const status = document.getElementById('timerStatus');
-        if(fast.active && fast.start) {
-            const diff = Date.now() - fast.start;
-            const h = Math.floor(diff/3600000), m = Math.floor((diff%3600000)/60000), s = Math.floor((diff%60000)/1000);
-            status.innerText = `${h.toString().padStart(2,'0')}:${m.toString().padStart(2,'0')}:${s.toString().padStart(2,'0')}`;
-            document.getElementById('fastBtn').innerText = "Termina Digiuno";
-        } else {
-            status.innerText = "00:00:00";
-            document.getElementById('fastBtn').innerText = "Inizia Digiuno";
+    function saveNewRecipe() {
+        const t = document.getElementById('recTitle').value;
+        const l = document.getElementById('recLink').value;
+        if(t && l) {
+            myRecipes.push({ t, l });
+            localStorage.setItem('bd_myrec', JSON.stringify(myRecipes));
+            document.getElementById('recTitle').value = "";
+            document.getElementById('recLink').value = "";
+            renderMyRecipes();
         }
     }
-    async function startCamera() {
-        try { videoStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } });
-        document.getElementById('video').srcObject = videoStream; } catch(e) {}
-    }
-    function stopCamera() { if(videoStream) videoStream.getTracks().forEach(t => t.stop()); }
-    
-    function renderApp() {
-        const date = document.getElementById('dateSelector').value || new Date().toISOString().split('T')[0];
-        const oggi = db.filter(p => p.data === date);
-        let tot = 0, s = {Colazione:0, Pranzo:0, Cena:0, Snack:0};
-        document.getElementById('foodList').innerHTML = oggi.map(p => {
-            tot += p.cal; s[p.cat] += p.cal;
-            return `<div class="card" style="display:flex; justify-content:space-between;"><b>${p.nome}</b> <span>${p.cal} kcal</span></div>`;
-        }).join('');
-        const ctx = document.getElementById('chartMain').getContext('2d');
-        if(chartM) chartM.destroy();
-        chartM = new Chart(ctx, { type: 'doughnut', data: { labels: Object.keys(s), datasets: [{ data: Object.values(s), backgroundColor: ['#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0'] }] }, options: { maintainAspectRatio: false }});
-        renderWater();
-    }
-    function renderWater() {
-        const count = water[document.getElementById('dateSelector').value] || 0;
-        let h = "";
-        for(let i=1; i<=8; i++) h += `<span class="water-glass ${i<=count?'filled':''}" onclick="setWater(${i})">💧</span>`;
-        document.getElementById('waterBox').innerHTML = h;
-    }
-    function setWater(n) { water[document.getElementById('dateSelector').value] = n; localStorage.setItem('bio_v16_water', JSON.stringify(water)); renderWater(); }
-    
-    function renderWeightChart() {
-        const ctx = document.getElementById('chartWeight').getContext('2d');
-        if(chartW) chartW.destroy();
-        chartW = new Chart(ctx, { type: 'line', data: { labels: weights.map(w=>w.d), datasets: [{ data: weights.map(w=>w.v), borderColor: '#8e44ad', tension: 0.3 }] }, options: { maintainAspectRatio: false }});
+    function renderMyRecipes() {
+        document.getElementById('personalRecipesList').innerHTML = myRecipes.map(r => `
+            <div class="card">📖 <b>${r.t}</b><br><a href="${r.l}" target="_blank">Link</a></div>
+        `).join('');
     }
 
-    // INIT
-    document.getElementById('dateSelector').valueAsDate = new Date();
-    document.getElementById('p-weight').value = prof.w;
-    document.getElementById('p-height').value = prof.h;
-    document.getElementById('p-age').value = prof.a;
-    document.getElementById('p-sex').value = prof.s;
-    setInterval(updateTimer, 1000);
-    renderApp(); renderDispensa(); renderWeightChart();
+    // Profilo & Scan
+    function saveProf() {
+        user = { w: document.getElementById('p-weight').value, h: document.getElementById('p-height').value, a: document.getElementById('p-age').value, s: document.getElementById('p-sex').value };
+        localStorage.setItem('bd_user', JSON.stringify(user));
+        weights.push({ d: new Date().toLocaleDateString('it-IT',{day:'2-digit',month:'2-digit'}), v: user.w });
+        localStorage.setItem('bd_weights', JSON.stringify(weights));
+        alert("Salvato!"); refreshWeight();
+    }
+    function refreshWeight() {
+        const ctx = document.getElementById('chartWeight').getContext('2d');
+        if(weightChart) weightChart.destroy();
+        weightChart = new Chart(ctx, { type:'line', data:{ labels:weights.map(w=>w.d), datasets:[{ data:weights.map(w=>w.v), borderColor:'#8e44ad' }] }, options:{ maintainAspectRatio:false }});
+    }
+    async function startCam() { try { stream = await navigator.mediaDevices.getUserMedia({video:{facingMode:"environment"}}); document.getElementById('video').srcObject = stream; } catch(e){} }
+    function stopCam() { if(stream) stream.getTracks().forEach(t => t.stop()); }
+    function renderWater() {
+        const count = waterLog[new Date().toISOString().split('T')[0]] || 0;
+        let h = "";
+        for(let i=1; i<=8; i++) h += `<span class="water-glass ${i<=count?'filled':''}" onclick="setW(${i})">💧</span>`;
+        document.getElementById('waterBox').innerHTML = h;
+    }
+    function setW(n) { waterLog[new Date().toISOString().split('T')[0]] = n; localStorage.setItem('bd_water', JSON.stringify(waterLog)); renderWater(); }
+
+    // Init
+    document.getElementById('p-weight').value = user.w;
+    document.getElementById('p-height').value = user.h;
+    document.getElementById('p-age').value = user.a;
+    document.getElementById('p-sex').value = user.s;
+    refresh(); refreshWeight();
 </script>
 </body>
 </html>
